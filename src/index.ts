@@ -29,16 +29,20 @@ console.log(getMemberIntro(2));
 console.log(getMemberIntro(999));
 
 // 선택 미션 1: type과 interface 비교
-// StudyMember를 type으로도 작성
+// StudyMember와 동일한 구조로 작성
 
 type StudyMemberByType = {
+    id: number;
     name: string;
-    level: number;
+    role: MemberRole;
+    githubId?: string;
 };
 
 interface StudyMemberByInterface {
+    id: number;
     name: string;
-    level: number;
+    role: MemberRole;
+    githubId?: string;
 }
 
 /*
