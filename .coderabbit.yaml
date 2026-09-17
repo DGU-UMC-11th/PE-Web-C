@@ -99,9 +99,7 @@ reviews:
     drafts: false
     # 리뷰를 수행할 대상 베이스 브랜치 (지정하지 않으면 모든 브랜치 대상)
     base_branches:
-      - "main"
-      - "develop"
-      - "feat/**"
+      - ".*"
     # PR 제목에 특정 키워드가 포함되어 있으면 리뷰 생략
     ignore_title_keywords:
       - "[Deploy]"
