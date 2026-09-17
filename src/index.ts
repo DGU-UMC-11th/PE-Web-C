@@ -28,6 +28,7 @@ console.log(getMemberIntro(1));
 console.log(getMemberIntro(2));
 console.log(getMemberIntro(999));
 
+
 // 선택 미션 1: type과 interface 비교
 // StudyMember와 동일한 구조로 작성
 
