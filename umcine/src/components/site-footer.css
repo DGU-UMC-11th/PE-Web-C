@@ -1,0 +1,28 @@
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 80px;
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border-default);
+}
+
+/* 제공된 TMDB 로고는 가로형 워드마크라 높이만 맞추고 비율을 유지 */
+.site-footer__logo {
+  height: 20px;
+  width: auto;
+}
+
+.site-footer__text {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.site-footer__text a {
+  color: inherit;
+  text-decoration: underline;
+}
