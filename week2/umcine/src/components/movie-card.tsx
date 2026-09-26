@@ -18,22 +18,24 @@ export default function MovieCard({
           alt={`${movie.title} 포스터`}
         />
 
-        <button
-          type="button"
-          className={`bookmark-button ${
-            movie.isBookmarked ? "bookmarked" : ""
-          }`}
-          onClick={() => onToggleBookmark(movie.id)}
-        >
-          <img
-            src={
-              movie.isBookmarked
-                ? "/icons/bookmark.svg"
-                : "/icons/bookmark-outline.svg"
-            }
-            alt="북마크"
-          />
-        </button>
+    <button
+      type="button"
+      aria-label={`${movie.title} 북마크`}
+      aria-pressed={movie.isBookmarked}
+      className={`bookmark-button ${
+        movie.isBookmarked ? "bookmarked" : ""
+      }`}
+      onClick={() => onToggleBookmark(movie.id)}
+    >
+      <img
+        src={
+          movie.isBookmarked
+            ? "/icons/bookmark.svg"
+            : "/icons/bookmark-outline.svg"
+        }
+        alt=""
+      />
+    </button>
       </div>
 
       <div className="movie-info">

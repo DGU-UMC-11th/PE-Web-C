@@ -170,7 +170,7 @@ button {
 
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(5, 241.5px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   column-gap: 16px;
   row-gap: 18px;
 }

@@ -20,18 +20,19 @@ export default function Pagination({
         <img src="/icons/chevron-left.svg" alt="이전 페이지" />
       </button>
 
-      {pages.map((page) => (
-        <button
-          type="button"
-          key={page}
-          className={`page-button ${
-            currentPage === page ? "active" : ""
-          }`}
-          onClick={() => onPageChange(page)}
-        >
-          {page}
-        </button>
-      ))}
+    {pages.map((page) => (
+      <button
+        type="button"
+        key={page}
+        aria-current={currentPage === page ? "page" : undefined}
+        className={`page-button ${
+          currentPage === page ? "active" : ""
+        }`}
+        onClick={() => onPageChange(page)}
+      >
+        {page}
+      </button>
+    ))}
 
       <button
         type="button"
