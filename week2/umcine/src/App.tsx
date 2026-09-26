@@ -9,16 +9,11 @@ import type { Movie } from "./types/movie";
 
 import "./styles/movie-page.css";
 
+const MOVIES_PER_PAGE = 2;
+
 export default function App() {
   const [movieList, setMovieList] = useState<Movie[]>(movies);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const moviesPerPage = 10;
-
-  const startIndex = (currentPage - 1) * moviesPerPage;
-  const endIndex = startIndex + moviesPerPage;
-
-  const currentMovies = movieList.slice(startIndex, endIndex);
 
   function handleToggleBookmark(movieId: number) {
     setMovieList((currentMovies) =>
@@ -32,6 +27,13 @@ export default function App() {
       ),
     );
   }
+
+  const startIndex = (currentPage - 1) * MOVIES_PER_PAGE;
+
+  const currentMovies = movieList.slice(
+    startIndex,
+    startIndex + MOVIES_PER_PAGE,
+  );
 
   return (
     <>
