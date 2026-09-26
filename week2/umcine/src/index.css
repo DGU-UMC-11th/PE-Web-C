@@ -1,0 +1,119 @@
+:root {
+  /* ── 색상 ───────────────────────────────── */
+  --color-bg: #ffffff;
+  --color-header-bg: #16181d;
+  --color-header-text: #ffffff;
+  --color-header-muted: #b5b8c0;
+
+  --color-text: #16181d;
+  --color-text-muted: #8a8f98;
+
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-on-accent: #ffffff;
+
+  --color-badge-bg: rgba(20, 22, 27, 0.55);
+  --color-badge-bg-hover: rgba(20, 22, 27, 0.75);
+
+  --color-border: #e5e7eb;
+  --color-surface-hover: #f3f4f6;
+
+  /* ── 레이아웃 ────────────────────────────── */
+  --content-width: 1440px;
+  --content-padding: 40px;
+  --header-height: 64px;
+
+  --grid-columns: 5;
+  --grid-gap: 24px;
+
+  /* 포스터 원본이 500x750(2:3)이라 그대로 맞춤 */
+  --poster-ratio: 2 / 3;
+  --poster-radius: 12px;
+
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui,
+    -apple-system, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* SVG 아이콘을 CSS 색상으로 칠하기 위한 공통 클래스
+   (img 태그는 fill을 바꿀 수 없어서 mask로 처리) */
+.icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  mask-image: var(--icon-url);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: var(--icon-url);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
