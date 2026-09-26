@@ -13,6 +13,13 @@ export default function App() {
   const [movieList, setMovieList] = useState<Movie[]>(movies);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const moviesPerPage = 10;
+
+  const startIndex = (currentPage - 1) * moviesPerPage;
+  const endIndex = startIndex + moviesPerPage;
+
+  const currentMovies = movieList.slice(startIndex, endIndex);
+
   function handleToggleBookmark(movieId: number) {
     setMovieList((currentMovies) =>
       currentMovies.map((movie) =>
@@ -34,7 +41,7 @@ export default function App() {
         <h1 className="page-title">영화 목록</h1>
 
         <MovieGrid
-          movies={movieList}
+          movies={currentMovies}
           onToggleBookmark={handleToggleBookmark}
         />
 
