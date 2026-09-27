@@ -18,6 +18,7 @@ function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
         <button
           className="bookmark-button"
           type="button"
+          aria-label={`${movie.title} 북마크`}
           aria-pressed={movie.isBookmarked}
           onClick={() => onToggleBookmark(movie.id)}
         >
