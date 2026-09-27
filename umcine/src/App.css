@@ -1,0 +1,322 @@
+/* =========================
+   PAGE
+========================= */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  background: #f6f7f9;
+  color: #17191e;
+
+  font-family: "Pretendard", sans-serif;
+}
+
+/* =========================
+   HEADER
+========================= */
+.header {
+  width: 100%;
+
+  padding: 24px max(80px, calc((100% - 1280px) / 2));
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: #ffffff;
+  border-bottom: 1px solid #e3e6eb;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 42px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+
+  display: block;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 100%;
+  letter-spacing: -0.7px;
+
+  color: #17191e;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav span {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 100%;
+
+  color: #606774;
+
+  cursor: pointer;
+}
+
+.nav .nav-active {
+  color: #17191e;
+
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-button {
+  width: 42px;
+  height: 42px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e3e6eb;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.search-button img {
+  width: 24px;
+  height: 24px;
+}
+
+.login-button {
+  height: 42px;
+
+  padding: 0 16px;
+
+  display: flex;
+  align-items: center;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 100%;
+
+  cursor: pointer;
+}
+
+/* =========================
+   MAIN
+========================= */
+.main-container {
+  flex: 1;
+
+  width: 100%;
+  max-width: 1440px;
+
+  margin: 0 auto;
+  padding: 24px 80px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title {
+  margin: 0;
+
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 44px;
+  letter-spacing: -1.71px;
+
+  color: #17191e;
+}
+
+/* =========================
+   MOVIE GRID
+========================= */
+.movie-grid {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+
+  column-gap: 18px;
+  row-gap: 20px;
+}
+
+/* =========================
+   MOVIE CARD
+========================= */
+.movie-card {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  cursor: pointer;
+}
+
+.poster {
+  position: relative;
+
+  width: 100%;
+  aspect-ratio: 241.6 / 274;
+
+  overflow: hidden;
+
+  background: #f6f7f9;
+  border-radius: 10px;
+}
+
+.poster-image {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  object-fit: cover;
+}
+
+/* =========================
+   BOOKMARK
+========================= */
+.bookmark-button {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 7.5px 6px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #17191e;
+
+  border: 1px solid #ffffff;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.bookmark-button[aria-pressed="true"] {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.bookmark-icon {
+  width: 14px;
+  height: 18px;
+
+  display: block;
+
+  filter: brightness(0) invert(1);
+}
+
+/* =========================
+   MOVIE TEXT
+========================= */
+.movie-title {
+  margin: 0;
+
+  padding-top: 5px;
+
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 100%;
+
+  color: #17191e;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-date {
+  margin: 0;
+
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 100%;
+
+  color: #969da8;
+}
+
+/* =========================
+   PAGINATION
+========================= */
+.pagination {
+  width: 100%;
+  height: 36px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 4px;
+}
+
+.page-button {
+  width: 36px;
+  height: 36px;
+
+  padding: 1px 6px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: transparent;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 100%;
+
+  color: #606774;
+
+  cursor: pointer;
+}
+
+.page-button[aria-current="page"] {
+  background: #17191e;
+  color: #ffffff;
+}
