@@ -1,4 +1,8 @@
+import { useState } from "react";
+
 function Pagination() {
+  const [page, setPage] = useState(1);
+
   return (
     <nav className="pagination" aria-label="페이지네이션">
       <div className="page-numbers">
@@ -7,7 +11,8 @@ function Pagination() {
             key={pageNumber}
             type="button"
             className="page-button"
-            aria-current={pageNumber === 1 ? "page" : undefined}
+            aria-current={pageNumber === page ? "page" : undefined}
+            onClick={() => setPage(pageNumber)}
           >
             {pageNumber}
           </button>
