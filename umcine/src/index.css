@@ -1,0 +1,46 @@
+:root {
+  /* Figma 디자인 시스템 - Color */
+  --color-bg-surface: #ffffff;
+  --color-bg-page: #f6f7f9;
+  --color-text-primary: #17191e;
+  --color-text-secondary: #606774;
+  --color-text-tertiary: #969da8;
+  --color-border-default: #e3e6eb;
+  --color-action-primary: #2563eb;
+  --color-action-hover: #1d4ed8;
+  --color-action-pressed: #1748ad;
+  --color-action-disabled: #d9e5ff;
+  --color-danger-default: #d92d20;
+
+  /* Figma 디자인 시스템 - Corner radius */
+  --corner-radius-7: 7px;
+  --corner-radius-8: 8px;
+  --corner-radius-10: 10px;
+
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-page);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+}
