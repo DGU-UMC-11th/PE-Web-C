@@ -1,5 +1,14 @@
-:root {
-  /* Figma 디자인 시스템 - Color */
+@import "tailwindcss";
+
+/*
+ * Figma 디자인 시스템 토큰
+ * 2주차에 :root에 두었던 CSS 변수를 Tailwind theme 변수로 옮겼어요.
+ * --color-* 로 선언하면 bg-*, text-*, border-* utility class가 만들어져요.
+ * 예) --color-action-primary → bg-action-primary, text-action-primary
+ */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+
   --color-bg-surface: #ffffff;
   --color-bg-page: #f6f7f9;
   --color-text-primary: #17191e;
@@ -11,36 +20,19 @@
   --color-action-pressed: #1748ad;
   --color-action-disabled: #d9e5ff;
   --color-danger-default: #d92d20;
-
-  /* Figma 디자인 시스템 - Corner radius */
-  --corner-radius-7: 7px;
-  --corner-radius-8: 8px;
-  --corner-radius-10: 10px;
-
-  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
-  color: var(--color-text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-}
+/*
+ * box-sizing, body margin, button/img 초기화는 Tailwind Preflight가 처리해요.
+ * Preflight에 없는 것만 남겼어요.
+ */
+@layer base {
+  body {
+    @apply bg-bg-page text-text-primary antialiased;
+  }
 
-body {
-  margin: 0;
-  background: var(--color-bg-page);
-}
-
-button {
-  font: inherit;
-  color: inherit;
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-img {
-  display: block;
+  /* Tailwind v4 Preflight는 button 커서를 default로 두므로 2주차처럼 pointer로 맞춰요. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
