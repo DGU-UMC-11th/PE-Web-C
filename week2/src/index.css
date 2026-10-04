@@ -1,0 +1,31 @@
+:root {
+  --color-bg: #f5f6fa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text-primary: #16171b;
+  --color-text-secondary: #8b8d98;
+  --color-accent: #3b6cf6;
+  --layout-max-width: 1200px;
+
+  font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system,
+    BlinkMacSystemFont, sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+img {
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
