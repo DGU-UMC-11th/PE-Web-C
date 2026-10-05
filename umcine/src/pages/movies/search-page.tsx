@@ -4,8 +4,13 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import { movies } from "../../data/movies";
 
 export function SearchPage() {
-  const { query } = useSearch({ from: "/search" });
-  const navigate = useNavigate({ from: "/search" });
+  const { query } = useSearch({
+    from: "/search",
+  });
+
+  const navigate = useNavigate({
+    from: "/search",
+  });
 
   const [searchText, setSearchText] = useState(query ?? "");
 
@@ -39,15 +44,15 @@ export function SearchPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f7f9] font-['Pretendard']">
-      <main className="mx-auto box-border flex w-full max-w-[1440px] flex-col px-20 py-6">
+      <main className="mx-auto box-border flex w-full max-w-[1440px] flex-col px-20 py-6 max-[768px]:px-5">
         <div className="flex flex-col gap-[17px]">
-          <h1 className="m-0 text-[38px] font-bold leading-[44px] tracking-[-1.71px] text-[#17191e]">
+          <h1 className="m-0 text-[38px] font-bold leading-[44px] tracking-[-1.71px] text-[#17191e] max-[768px]:text-[30px]">
             영화 검색
           </h1>
 
           <form
             onSubmit={handleSubmit}
-            className="box-border flex h-[54px] w-full items-center gap-[18px] rounded-[9px] border border-[#e3e6eb] bg-white pl-[15px] pr-[10px]"
+            className="box-border flex h-[54px] w-full items-center gap-[18px] rounded-[9px] border border-[#e3e6eb] bg-white pl-[15px] pr-[10px] max-[480px]:gap-2"
           >
             <img
               src="/icons/search.svg"
@@ -76,7 +81,7 @@ export function SearchPage() {
 
             <button
               type="submit"
-              className="flex h-[42px] shrink-0 cursor-pointer items-center rounded-lg border border-white bg-[#17191e] px-4 text-[14px] font-extrabold leading-none text-white"
+              className="flex h-[42px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-lg border border-white bg-[#17191e] px-4 text-[14px] font-extrabold leading-none text-white max-[480px]:px-3 max-[480px]:text-[12px]"
             >
               다시 검색
             </button>
@@ -104,18 +109,18 @@ export function SearchPage() {
                 검색 결과가 없어요.
               </p>
             ) : (
-              <div className="grid w-full grid-cols-2 gap-x-10">
+              <div className="grid w-full grid-cols-1 gap-x-10 min-[769px]:grid-cols-2">
                 {searchResults.map((movie) => (
                   <article
                     key={movie.id}
-                    className="box-border flex h-[240px] cursor-pointer gap-[18px] border-b border-[#e3e6eb] py-5"
+                    className="box-border flex min-h-[240px] gap-[18px] border-b border-[#e3e6eb] py-5 max-[480px]:gap-3"
                   >
                     <Link
                       to="/movies/$movieId"
                       params={{
                         movieId: String(movie.id),
                       }}
-                      className="h-[190px] w-[126px] shrink-0 overflow-hidden rounded-[10px] bg-[#f6f7f9]"
+                      className="h-[190px] w-[126px] shrink-0 overflow-hidden rounded-[10px] bg-[#f6f7f9] max-[480px]:h-[150px] max-[480px]:w-[100px]"
                     >
                       <img
                         src={movie.posterPath}
@@ -124,12 +129,12 @@ export function SearchPage() {
                       />
                     </Link>
 
-                    <div className="box-border flex min-w-0 flex-1 flex-col gap-2 pb-[47.7px] pt-1">
+                    <div className="box-border flex min-w-0 flex-1 flex-col gap-2 pt-1">
                       <h3 className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-[18px] font-bold leading-6 text-[#17191e]">
                         {movie.title}
                       </h3>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[12px] font-normal leading-none text-[#969da8]">
                           {movie.originalTitle}
                         </span>
