@@ -25,9 +25,16 @@ public class RentalRepository {
         );
     }
 
-    public void returnRental(Long rentalId) {
-        String sql = "UPDATE rental SET returned_at = NOW() WHERE rental_id = ?";
+    public boolean returnRental(Long rentalId) {
+        String sql = """
+            UPDATE rental
+            SET returned_at = NOW()
+            WHERE rental_id = ?
+              AND returned_at IS NULL
+            """;
 
-        jdbcTemplate.update(sql, rentalId);
+        int updatedRows = jdbcTemplate.update(sql, rentalId);
+
+        return updatedRows > 0;
     }
 }

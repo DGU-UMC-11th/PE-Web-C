@@ -16,7 +16,7 @@ public class RentalService {
         rentalRepository.save(body);
     }
 
-    public void returnRental(Long rentalId) {
-        rentalRepository.returnRental(rentalId);
+    public boolean returnRental(Long rentalId) {
+        return rentalRepository.returnRental(rentalId);
     }
 }
