@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -23,6 +24,25 @@ export const useBookmarkStore = create<BookmarkStore>()(
       partialize: (state) => ({
         bookmarkedMovieIds: state.bookmarkedMovieIds,
       }),
-    },
-  ),
+
+      merge: (persistedState, currentState) => {
+        const saved = persistedState as {
+          bookmarkedMovieIds?: unknown;
+        } | null;
+
+        const ids = saved?.bookmarkedMovieIds;
+
+        return {
+          ...currentState,
+          bookmarkedMovieIds: Array.isArray(ids)
+            ? ids.filter(
+                (id): id is number =>
+                  typeof id === "number" &&
+                  Number.isInteger(id)
+              )
+            : [],
+        };
+      },
+    }
+  )
 );

@@ -6,17 +6,27 @@ import { useMovieBookmarks } from "../../hooks/use-movie-bookmarks";
 const PAGE_SIZE = 10;
 const SORT_KEY = "umcine-sort-order";
 
-const savedSort = localStorage.getItem(SORT_KEY);
+function getSortOrder(): "title" | "default" {
+  try {
+    const savedSort = localStorage.getItem(SORT_KEY);
 
-if (savedSort !== "title" && savedSort !== "default") {
-  localStorage.setItem(SORT_KEY, "default");
+    if (savedSort === "title" || savedSort === "default") {
+      return savedSort;
+    }
+
+    localStorage.setItem(SORT_KEY, "default");
+  } catch {
+    return "default";
+  }
+
+  return "default";
 }
 
 export function MovieListPage() {
   const { movieList } = useMovieBookmarks();
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(movieList.length / PAGE_SIZE));
-  const sortOrder = localStorage.getItem(SORT_KEY);
+  const sortOrder = getSortOrder();
 
   const sortedMovies =
     sortOrder === "title"
