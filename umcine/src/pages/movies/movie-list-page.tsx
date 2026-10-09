@@ -1,25 +1,20 @@
-import { useState } from "react";
-
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 
 export function MovieListPage() {
-  const [movieList, setMovieList] = useState(movies);
+  const bookmarkedMovieIds = useBookmarkStore(
+    (state) => state.bookmarkedMovieIds,
+  );
 
-  function handleToggleBookmark(movieId: number) {
-    setMovieList((currentMovies) =>
-      currentMovies.map((movie) =>
-        movie.id === movieId
-          ? {
-              ...movie,
-              isBookmarked: !movie.isBookmarked,
-            }
-          : movie,
-      ),
-    );
-  }
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+
+  const movieList = movies.map((movie) => ({
+    ...movie,
+    isBookmarked: bookmarkedMovieIds.includes(movie.id),
+  }));
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f7f9] font-['Pretendard'] text-[#17191e]">
@@ -28,7 +23,7 @@ export function MovieListPage() {
           영화 목록
         </h1>
 
-        <MovieGrid movies={movieList} onToggleBookmark={handleToggleBookmark} />
+        <MovieGrid movies={movieList} onToggleBookmark={toggleBookmark} />
 
         <Pagination />
       </main>

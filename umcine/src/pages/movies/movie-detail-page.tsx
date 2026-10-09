@@ -2,6 +2,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 
 export function MovieDetailPage() {
   const { movieId } = useParams({
@@ -11,8 +12,15 @@ export function MovieDetailPage() {
   const movie = movies.find((item) => item.id === Number(movieId));
 
   const [rating, setRating] = useState(0);
-
   const [review, setReview] = useState("");
+
+  const bookmarkedMovieIds = useBookmarkStore(
+    (state) => state.bookmarkedMovieIds,
+  );
+
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+
+  const isBookmarked = movie ? bookmarkedMovieIds.includes(movie.id) : false;
 
   if (!movie) {
     return (
@@ -100,6 +108,7 @@ export function MovieDetailPage() {
           <div className="flex">
             <button
               type="button"
+              onClick={() => toggleBookmark(movie.id)}
               className="flex h-[42px] cursor-pointer items-center gap-2 rounded-lg border border-white bg-[#2563eb] px-4 text-[14px] font-extrabold leading-none text-white"
             >
               <img
@@ -107,7 +116,7 @@ export function MovieDetailPage() {
                 alt=""
                 className="block h-4 w-4 brightness-0 invert"
               />
-              즐겨찾기
+              {isBookmarked ? "즐겨찾기 해제" : "즐겨찾기"}
             </button>
           </div>
         </section>
