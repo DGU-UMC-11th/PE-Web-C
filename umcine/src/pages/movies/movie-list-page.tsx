@@ -16,9 +16,13 @@ export function MovieListPage() {
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
   const [cardSize, setCardSize] = useState<CardSize>(() => {
-    const savedCardSize = localStorage.getItem("umcine-card-size");
-
-    return savedCardSize === "large" ? "large" : "small";
+    try {
+      return localStorage.getItem("umcine-card-size") === "large"
+        ? "large"
+        : "small";
+    } catch {
+      return "small";
+    }
   });
 
   const movieList = movies.map((movie) => ({
@@ -28,7 +32,12 @@ export function MovieListPage() {
 
   function handleCardSizeChange(size: CardSize) {
     setCardSize(size);
-    localStorage.setItem("umcine-card-size", size);
+
+    try {
+      localStorage.setItem("umcine-card-size", size);
+    } catch (error) {
+      console.warn("카드 크기 저장에 실패했어요.", error);
+    }
   }
 
   return (
@@ -43,7 +52,12 @@ export function MovieListPage() {
             <button
               type="button"
               onClick={() => handleCardSizeChange("small")}
-              className="rounded-lg border border-[#e3e6eb] bg-white px-3 py-2 text-[12px] font-bold"
+              aria-pressed={cardSize === "small"}
+              className={`rounded-lg border px-3 py-2 text-[12px] font-bold ${
+                cardSize === "small"
+                  ? "border-[#17191e] bg-[#e3e6eb]"
+                  : "border-[#e3e6eb] bg-white"
+              }`}
             >
               작게
             </button>
@@ -51,7 +65,12 @@ export function MovieListPage() {
             <button
               type="button"
               onClick={() => handleCardSizeChange("large")}
-              className="rounded-lg border border-[#e3e6eb] bg-white px-3 py-2 text-[12px] font-bold"
+              aria-pressed={cardSize === "large"}
+              className={`rounded-lg border px-3 py-2 text-[12px] font-bold ${
+                cardSize === "large"
+                  ? "border-[#17191e] bg-[#e3e6eb]"
+                  : "border-[#e3e6eb] bg-white"
+              }`}
             >
               크게
             </button>
