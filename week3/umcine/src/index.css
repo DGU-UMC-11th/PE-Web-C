@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  /* Figma "디자인 시스템" 페이지의 color/* 토큰을 그대로 옮겼어요 */
+  --color-page: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f6f7f9;
+
+  --color-ink: #17191e;
+  --color-secondary: #606774;
+  --color-muted: #969da8;
+
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-pressed: #1748ad;
+  --color-accent-disabled: #d9e5ff;
+
+  --color-danger: #d92d20;
+
+  --color-border: #e3e6eb;
+
+  --color-badge: rgba(20, 22, 27, 0.55);
+  --color-badge-hover: rgba(20, 22, 27, 0.75);
+}
+
+body {
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui,
+    -apple-system, sans-serif;
+  color: var(--color-ink);
+  background-color: var(--color-page);
+}
+
+/* SVG 아이콘을 currentColor로 칠하기 위한 공통 마스크 유틸리티
+   (img 태그는 fill을 바꿀 수 없어서 mask로 처리) */
+.icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask-image: var(--icon-url);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: var(--icon-url);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
