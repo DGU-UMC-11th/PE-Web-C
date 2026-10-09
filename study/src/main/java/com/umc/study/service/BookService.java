@@ -22,14 +22,31 @@ public class BookService {
     private final CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
-    public List<BookResponse> getBooks() {
-        return bookRepository.findAllByOrderByBookIdDesc().stream()
+    public List<BookResponse> getBooks(String keyword) {
+
+        List<Book> books;
+
+        if (keyword == null || keyword.isBlank()) {
+            books = bookRepository.findAllByOrderByBookIdDesc();
+        } else {
+            books = bookRepository.findByTitleContainingOrderByBookIdDesc(keyword);
+        }
+
+        return books.stream()
                 .map(BookResponse::from)
                 .toList();
     }
 
     @Transactional
     public BookResponse createBook(CreateBookRequest request) {
+
+        if (bookRepository.existsByTitle(request.title())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 존재하는 도서 제목입니다."
+            );
+        }
+
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() ->
                         new ResponseStatusException(
