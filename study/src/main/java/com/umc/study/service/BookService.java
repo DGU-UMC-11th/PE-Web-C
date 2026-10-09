@@ -7,6 +7,7 @@ import com.umc.study.entity.Category;
 import com.umc.study.repository.BookRepository;
 import com.umc.study.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +62,15 @@ public class BookService {
                 request.description()
         );
 
-        return BookResponse.from(bookRepository.save(book));
+        try {
+            return BookResponse.from(
+                    bookRepository.saveAndFlush(book)
+            );
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 존재하는 도서 제목입니다."
+            );
+        }
     }
 }
