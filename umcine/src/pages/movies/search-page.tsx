@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
+import { BookmarkButton } from "../../components/movies/bookmark-button";
 import { movies } from "../../data/movies";
 
 export function SearchPage() {
@@ -76,8 +77,11 @@ export function SearchPage() {
                     src={movie.posterPath}
                     alt={`${movie.title} 포스터`}
                   />
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <h3 className="text-base font-extrabold">{movie.title}</h3>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-base font-extrabold">{movie.title}</h3>
+                      <BookmarkButton movieId={movie.id} title={movie.title} />
+                    </div>
                     <p className="text-xs text-text-tertiary">{movie.originalTitle}</p>
                     <p className="text-xs text-text-tertiary">{movie.releaseDate}</p>
                     <p className="line-clamp-2 text-sm text-text-secondary">{movie.overview}</p>
