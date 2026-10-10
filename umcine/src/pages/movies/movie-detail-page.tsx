@@ -1,4 +1,5 @@
 import { Link, useParams } from "@tanstack/react-router";
+import { BookmarkButton } from "../../components/movies/bookmark-button";
 import { movies } from "../../data/movies";
 
 export function MovieDetailPage() {
@@ -50,9 +51,12 @@ export function MovieDetailPage() {
               alt={`${movie.title} 포스터`}
             />
             <div className="flex flex-col gap-2">
-              <h1 className="text-[30px] leading-tight font-bold tracking-[-1.2px] sm:text-[38px] sm:leading-[44px] sm:tracking-[-1.71px]">
-                {movie.title}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-[30px] leading-tight font-bold tracking-[-1.2px] sm:text-[38px] sm:leading-[44px] sm:tracking-[-1.71px]">
+                  {movie.title}
+                </h1>
+                <BookmarkButton movieId={movie.id} title={movie.title} />
+              </div>
               <p className="text-sm text-white/80">{movie.originalTitle}</p>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-white/80">
                 <p>{movie.releaseDate}</p>
