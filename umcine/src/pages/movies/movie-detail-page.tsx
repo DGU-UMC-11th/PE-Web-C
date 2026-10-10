@@ -2,12 +2,16 @@ import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { movies } from "../../data/movies";
 import { cn } from "../../utils/cn";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 
 export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
   const movie = movies.find((item) => item.id === Number(movieId));
 
-  const [isBookmarked, setIsBookmarked] = useState(movie?.isBookmarked ?? false);
+  const isBookmarked = useBookmarkStore((state) =>
+    state.bookmarkedMovieIds.includes(Number(movieId)),
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
   const [rating, setRating] = useState(0);
 
   if (!movie) {
@@ -39,9 +43,15 @@ export function MovieDetailPage() {
           </Link>
           <div>
             <h1 className="text-5xl font-bold tracking-tight">{movie.title}</h1>
-            <p className="mt-2 text-base text-white/80">{movie.originalTitle}</p>
+            <p className="mt-2 text-base text-white/80">
+              {movie.originalTitle}
+            </p>
             <p className="mt-4 text-sm font-semibold text-white/90">
-              {[movie.releaseDate, movie.genres.join(" · "), movie.runtime].join("  ·  ")}
+              {[
+                movie.releaseDate,
+                movie.genres.join(" · "),
+                movie.runtime,
+              ].join("  ·  ")}
             </p>
           </div>
         </div>
@@ -56,11 +66,13 @@ export function MovieDetailPage() {
           />
           <div className="pt-1">
             <h2 className="text-xl font-bold">{movie.tagline}</h2>
-            <p className="mt-3 max-w-xl text-[15px] leading-7 text-gray-600">{movie.overview}</p>
+            <p className="mt-3 max-w-xl text-[15px] leading-7 text-gray-600">
+              {movie.overview}
+            </p>
             <button
               type="button"
               aria-pressed={isBookmarked}
-              onClick={() => setIsBookmarked((prev) => !prev)}
+              onClick={() => toggleBookmark(movie.id)}
               className={cn(
                 "mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
                 isBookmarked
@@ -77,14 +89,16 @@ export function MovieDetailPage() {
               >
                 <path d="M6 3h12v18l-6-4-6 4z" />
               </svg>
-              {isBookmarked ? "즐겨찾기 해제" : "즐겨찾기"}
+              {isBookmarked ? "북마크 해제" : "북마크 추가"}
             </button>
           </div>
         </div>
 
         <aside className="h-fit rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-bold">내 평점</h2>
-          <p className="mt-1 text-xs text-gray-500">별점을 눌러 평가를 남겨보세요.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            별점을 눌러 평가를 남겨보세요.
+          </p>
           <div className="mt-4 flex gap-2">
             {[1, 2, 3, 4, 5].map((score) => (
               <button

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type SubmitEvent } from "react";
 import { movies } from "../../data/movies";
+import { BookmarkButton } from "../../components/bookmark-button";
 
 export function SearchPage() {
   const { query } = useSearch({ from: "/search" });
@@ -33,7 +34,13 @@ export function SearchPage() {
       onSubmit={handleSubmit}
       className="flex w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2"
     >
-      <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        className="size-4 shrink-0 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="7" />
         <path d="m20 20-3.5-3.5" />
       </svg>
@@ -74,11 +81,16 @@ export function SearchPage() {
       </div>
 
       {searchResults.length === 0 ? (
-        <p className="py-20 text-center text-sm text-gray-500">검색 결과가 없어요.</p>
+        <p className="py-20 text-center text-sm text-gray-500">
+          검색 결과가 없어요.
+        </p>
       ) : (
         <ul className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
           {searchResults.map((movie) => (
-            <li key={movie.id} className="flex gap-4 border-b border-gray-200 py-5">
+            <li
+              key={movie.id}
+              className="flex gap-4 border-b border-gray-200 py-5"
+            >
               <img
                 src={movie.posterPath}
                 alt={`${movie.title} 포스터`}
@@ -89,14 +101,19 @@ export function SearchPage() {
                 <p className="mt-0.5 text-xs text-gray-500">
                   {movie.originalTitle} · {movie.releaseDate}
                 </p>
-                <p className="mt-2 line-clamp-2 text-sm text-gray-600">{movie.overview}</p>
-                <Link
-                  to="/movies/$movieId"
-                  params={{ movieId: String(movie.id) }}
-                  className="mt-2 inline-block text-xs font-semibold text-blue-600 hover:underline"
-                >
-                  상세 보기 →
-                </Link>
+                <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                  {movie.overview}
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <Link
+                    to="/movies/$movieId"
+                    params={{ movieId: String(movie.id) }}
+                    className="text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    상세 보기 →
+                  </Link>
+                  <BookmarkButton movieId={movie.id} className="px-3 py-1" />
+                </div>
               </div>
             </li>
           ))}
