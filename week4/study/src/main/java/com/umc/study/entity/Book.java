@@ -40,4 +40,13 @@ public class Book {
         this.title = title;
         this.description = description;
     }
+    // 도서 대여 시 대여 불가능 상태로 변경
+    public void markRented() {
+        this.isAvailable = false;
+    }
+
+    // 도서 반납 시 대여 가능 상태로 변경
+    public void markAvailable() {
+        this.isAvailable = true;
+    }
 }
