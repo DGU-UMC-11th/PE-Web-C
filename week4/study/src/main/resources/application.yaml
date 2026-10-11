@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: "umc-study"
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PW}
+
+  jpa:
+    hibernate:
+      # 3주차에 Workbench로 만든 테이블을 그대로 쓰므로, 테이블을 만들거나 바꾸지 않고 엔티티와 구조가 맞는지만 검사해요.
+      ddl-auto: validate
+    open-in-view: false
+    # Hibernate가 실제로 실행하는 SQL을 콘솔에서 확인해요.
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
