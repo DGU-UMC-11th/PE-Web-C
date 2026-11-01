@@ -12,7 +12,7 @@ import {
 } from "../../utils/movies/tmdb-image";
 
 interface MovieDetailState {
-  movieId: number | null;
+  requestKey: string;
   movie: TmdbMovieDetail | null;
   errorMessage: string | null;
 }
@@ -46,12 +46,15 @@ export function MovieDetailPage() {
   const isValidMovieId = Number.isInteger(parsedMovieId) && parsedMovieId > 0;
 
   const [detailState, setDetailState] = useState<MovieDetailState>({
-    movieId: null,
+    requestKey: "",
     movie: null,
     errorMessage: null,
   });
 
+  const [retryCount, setRetryCount] = useState(0);
+
   const [rating, setRating] = useState(0);
+
   const [review, setReview] = useState("");
 
   const bookmarkedMovieIds = useBookmarkStore(
@@ -59,6 +62,8 @@ export function MovieDetailPage() {
   );
 
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+
+  const requestKey = `${parsedMovieId}:${retryCount}`;
 
   useEffect(() => {
     let ignore = false;
@@ -71,7 +76,7 @@ export function MovieDetailPage() {
       .then((response) => {
         if (!ignore) {
           setDetailState({
-            movieId: parsedMovieId,
+            requestKey,
             movie: response,
             errorMessage: null,
           });
@@ -80,7 +85,7 @@ export function MovieDetailPage() {
       .catch((error: unknown) => {
         if (!ignore) {
           setDetailState({
-            movieId: parsedMovieId,
+            requestKey,
             movie: null,
             errorMessage: getMovieDetailErrorMessage(error),
           });
@@ -90,7 +95,7 @@ export function MovieDetailPage() {
     return () => {
       ignore = true;
     };
-  }, [parsedMovieId, isValidMovieId]);
+  }, [parsedMovieId, isValidMovieId, requestKey]);
 
   if (!isValidMovieId) {
     return (
@@ -104,13 +109,13 @@ export function MovieDetailPage() {
     );
   }
 
-  const isCurrentMovie = detailState.movieId === parsedMovieId;
+  const isCurrentRequest = detailState.requestKey === requestKey;
 
-  const isLoading = !isCurrentMovie;
+  const isLoading = !isCurrentRequest;
 
-  const movie = isCurrentMovie ? detailState.movie : null;
+  const movie = isCurrentRequest ? detailState.movie : null;
 
-  const errorMessage = isCurrentMovie ? detailState.errorMessage : null;
+  const errorMessage = isCurrentRequest ? detailState.errorMessage : null;
 
   if (isLoading) {
     return (
@@ -127,10 +132,20 @@ export function MovieDetailPage() {
   if (errorMessage || !movie) {
     return (
       <main className="min-h-screen bg-[#f6f7f9]">
-        <div className="mx-auto box-border w-full max-w-[1440px] px-20 py-10 max-[768px]:px-5">
+        <div className="mx-auto box-border flex w-full max-w-[1440px] flex-col items-start gap-3 px-20 py-10 max-[768px]:px-5">
           <p className="m-0 text-[16px] font-bold text-[#17191e]">
             {errorMessage ?? "영화 정보를 불러오지 못했어요."}
           </p>
+
+          {errorMessage !== "영화를 찾을 수 없어요." && (
+            <button
+              type="button"
+              onClick={() => setRetryCount((current) => current + 1)}
+              className="cursor-pointer rounded-lg border-none bg-[#17191e] px-4 py-3 text-[13px] font-bold text-white"
+            >
+              다시 시도
+            </button>
+          )}
         </div>
       </main>
     );

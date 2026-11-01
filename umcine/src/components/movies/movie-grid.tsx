@@ -1,10 +1,10 @@
-import type { TmdbMovieListItem } from "../../api/movies/models";
+import type { MovieListItem } from "../../types/movie-list-item";
 import { cn } from "../../utils/cn";
 
 import MovieCard from "./movie-card";
 
 interface MovieGridProps {
-  movies: TmdbMovieListItem[];
+  movies: MovieListItem[];
   bookmarkedMovieIds: number[];
   onToggleBookmark: (movieId: number) => void;
   cardSize: "small" | "large";

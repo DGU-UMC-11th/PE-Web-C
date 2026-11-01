@@ -1,18 +1,15 @@
 import { Link } from "@tanstack/react-router";
 
-import type { TmdbMovieListItem } from "../../api/movies/models";
+import type { MovieListItem } from "../../types/movie-list-item";
 import { cn } from "../../utils/cn";
-import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
 
 interface MovieCardProps {
-  movie: TmdbMovieListItem;
+  movie: MovieListItem;
   isBookmarked: boolean;
   onToggleBookmark: (movieId: number) => void;
 }
 
 function MovieCard({ movie, isBookmarked, onToggleBookmark }: MovieCardProps) {
-  const posterUrl = getTmdbPosterUrl(movie.poster_path);
-
   return (
     <article className="flex min-w-0 flex-col gap-1">
       <div className="relative aspect-[241.6/274] w-full overflow-hidden rounded-[10px] bg-[#e3e6eb]">
@@ -23,10 +20,10 @@ function MovieCard({ movie, isBookmarked, onToggleBookmark }: MovieCardProps) {
           }}
           className="block h-full w-full"
         >
-          {posterUrl ? (
+          {movie.posterUrl ? (
             <img
               className="block h-full w-full object-cover"
-              src={posterUrl}
+              src={movie.posterUrl}
               alt={`${movie.title} 포스터`}
             />
           ) : (
@@ -65,7 +62,7 @@ function MovieCard({ movie, isBookmarked, onToggleBookmark }: MovieCardProps) {
       </h2>
 
       <p className="m-0 text-[12px] font-normal leading-none text-[#969da8]">
-        {movie.release_date || "개봉일 정보 없음"}
+        {movie.releaseDate || "개봉일 정보 없음"}
       </p>
     </article>
   );

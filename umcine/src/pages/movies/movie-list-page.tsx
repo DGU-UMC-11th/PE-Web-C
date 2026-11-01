@@ -1,19 +1,42 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
+
 import { useEffect, useState } from "react";
 
 import { getMovies } from "../../api/movies/get-movies";
-import type { TmdbMovieListItem } from "../../api/movies/models";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { useBookmarkStore } from "../../stores/bookmark-store";
+import type { MovieListItem } from "../../types/movie-list-item";
+import { toMovieListItems } from "../../utils/movies/movie-adapter";
 
 type CardSize = "small" | "large";
 
+interface MovieListState {
+  requestKey: string;
+  movies: MovieListItem[];
+  totalPages: number;
+  errorMessage: string | null;
+}
+
 export function MovieListPage() {
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
+  const { page: searchPage } = useSearch({
+    from: "/",
+  });
 
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate({
+    from: "/",
+  });
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const page = searchPage ?? 1;
+
+  const [retryCount, setRetryCount] = useState(0);
+
+  const [movieState, setMovieState] = useState<MovieListState>({
+    requestKey: "",
+    movies: [],
+    totalPages: 1,
+    errorMessage: null,
+  });
 
   const bookmarkedMovieIds = useBookmarkStore(
     (state) => state.bookmarkedMovieIds,
@@ -31,38 +54,69 @@ export function MovieListPage() {
     }
   });
 
+  const requestKey = `${page}:${retryCount}`;
+
   useEffect(() => {
     let ignore = false;
 
-    async function loadMovies() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await getMovies({
-          page: 1,
-        });
-
+    getMovies({
+      page,
+    })
+      .then((response) => {
         if (!ignore) {
-          setMovies(response.results);
+          setMovieState({
+            requestKey,
+            movies: toMovieListItems(response.results),
+            totalPages: response.total_pages,
+            errorMessage: null,
+          });
         }
-      } catch {
+      })
+      .catch(() => {
         if (!ignore) {
-          setErrorMessage("영화 목록을 불러오지 못했어요.");
+          setMovieState({
+            requestKey,
+            movies: [],
+            totalPages: 1,
+            errorMessage: "영화 목록을 불러오지 못했어요.",
+          });
         }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadMovies();
+      });
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [page, requestKey]);
+
+  const isCurrentRequest = movieState.requestKey === requestKey;
+
+  const isLoading = !isCurrentRequest;
+
+  const movies = isCurrentRequest ? movieState.movies : [];
+
+  const errorMessage = isCurrentRequest ? movieState.errorMessage : null;
+
+  const totalPages = isCurrentRequest ? movieState.totalPages : 1;
+
+  function handleRetry() {
+    setRetryCount((current) => current + 1);
+  }
+
+  function handlePageChange(nextPage: number) {
+    navigate({
+      search:
+        nextPage === 1
+          ? {}
+          : {
+              page: nextPage,
+            },
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
 
   function handleCardSizeChange(size: CardSize) {
     setCardSize(size);
@@ -116,9 +170,17 @@ export function MovieListPage() {
             영화 목록을 불러오는 중이에요.
           </p>
         ) : errorMessage ? (
-          <p className="py-10 text-center text-[14px] text-red-500">
-            {errorMessage}
-          </p>
+          <div className="flex flex-col items-center gap-3 py-10">
+            <p className="m-0 text-[14px] text-red-500">{errorMessage}</p>
+
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="cursor-pointer rounded-lg border-none bg-[#17191e] px-4 py-3 text-[13px] font-bold text-white"
+            >
+              다시 시도
+            </button>
+          </div>
         ) : movies.length === 0 ? (
           <p className="py-10 text-center text-[14px] text-[#606774]">
             조건에 맞는 영화가 없어요.
@@ -132,7 +194,13 @@ export function MovieListPage() {
           />
         )}
 
-        <Pagination />
+        {!isLoading && !errorMessage && movies.length > 0 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
 
         <div className="mt-4 flex justify-center border-t border-[#e3e6eb] pt-6">
           <img src="/images/logos/tmdb-logo.svg" alt="TMDB" className="h-5" />
