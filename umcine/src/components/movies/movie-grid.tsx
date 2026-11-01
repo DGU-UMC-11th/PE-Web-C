@@ -1,15 +1,21 @@
-import type { Movie } from "../../types/movie";
+import type { TmdbMovieListItem } from "../../api/movies/models";
 import { cn } from "../../utils/cn";
 
 import MovieCard from "./movie-card";
 
 interface MovieGridProps {
-  movies: Movie[];
+  movies: TmdbMovieListItem[];
+  bookmarkedMovieIds: number[];
   onToggleBookmark: (movieId: number) => void;
   cardSize: "small" | "large";
 }
 
-function MovieGrid({ movies, onToggleBookmark, cardSize }: MovieGridProps) {
+function MovieGrid({
+  movies,
+  bookmarkedMovieIds,
+  onToggleBookmark,
+  cardSize,
+}: MovieGridProps) {
   return (
     <section
       className={cn(
@@ -23,6 +29,7 @@ function MovieGrid({ movies, onToggleBookmark, cardSize }: MovieGridProps) {
         <MovieCard
           key={movie.id}
           movie={movie}
+          isBookmarked={bookmarkedMovieIds.includes(movie.id)}
           onToggleBookmark={onToggleBookmark}
         />
       ))}

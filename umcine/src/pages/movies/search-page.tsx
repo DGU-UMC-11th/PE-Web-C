@@ -1,8 +1,17 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+
 import { useEffect, useState, type SubmitEvent } from "react";
 
-import { movies } from "../../data/movies";
+import type { TmdbMovieListItem } from "../../api/movies/models";
+import { searchMovies } from "../../api/movies/search-movies";
 import { useBookmarkStore } from "../../stores/bookmark-store";
+import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
+
+interface SearchResultState {
+  query: string;
+  movies: TmdbMovieListItem[];
+  errorMessage: string | null;
+}
 
 export function SearchPage() {
   const { query } = useSearch({
@@ -15,25 +24,61 @@ export function SearchPage() {
 
   const [searchText, setSearchText] = useState(query ?? "");
 
+  const [searchResult, setSearchResult] = useState<SearchResultState>({
+    query: "",
+    movies: [],
+    errorMessage: null,
+  });
+
   const bookmarkedMovieIds = useBookmarkStore(
     (state) => state.bookmarkedMovieIds,
   );
 
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
+  const normalizedQuery = query?.trim() ?? "";
+
   useEffect(() => {
-    setSearchText(query ?? "");
-  }, [query]);
+    let ignore = false;
 
-  const normalizedQuery = query?.trim().toLowerCase() ?? "";
+    if (!normalizedQuery) {
+      return;
+    }
 
-  const searchResults = normalizedQuery
-    ? movies.filter(
-        (movie) =>
-          movie.title.toLowerCase().includes(normalizedQuery) ||
-          movie.originalTitle.toLowerCase().includes(normalizedQuery),
-      )
-    : [];
+    searchMovies({
+      query: normalizedQuery,
+    })
+      .then((response) => {
+        if (!ignore) {
+          setSearchResult({
+            query: normalizedQuery,
+            movies: response.results,
+            errorMessage: null,
+          });
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setSearchResult({
+            query: normalizedQuery,
+            movies: [],
+            errorMessage: "검색 결과를 불러오지 못했어요.",
+          });
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [normalizedQuery]);
+
+  const isCurrentQuery = searchResult.query === normalizedQuery;
+
+  const movies = isCurrentQuery ? searchResult.movies : [];
+
+  const errorMessage = isCurrentQuery ? searchResult.errorMessage : null;
+
+  const isLoading = normalizedQuery !== "" && !isCurrentQuery;
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,18 +152,28 @@ export function SearchPage() {
               </h2>
 
               <span className="text-[12px] font-normal leading-none text-[#969da8]">
-                영화 {searchResults.length}편
+                영화 {movies.length}편
               </span>
             </div>
 
-            {searchResults.length === 0 ? (
+            {isLoading ? (
+              <p className="py-10 text-center text-[14px] text-[#606774]">
+                검색 결과를 불러오는 중이에요.
+              </p>
+            ) : errorMessage ? (
+              <p className="py-10 text-center text-[14px] text-red-500">
+                {errorMessage}
+              </p>
+            ) : movies.length === 0 ? (
               <p className="py-10 text-center text-[14px] text-[#606774]">
                 검색 결과가 없어요.
               </p>
             ) : (
               <div className="grid w-full grid-cols-1 gap-x-10 min-[769px]:grid-cols-2">
-                {searchResults.map((movie) => {
+                {movies.map((movie) => {
                   const isBookmarked = bookmarkedMovieIds.includes(movie.id);
+
+                  const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
                   return (
                     <article
@@ -130,13 +185,19 @@ export function SearchPage() {
                         params={{
                           movieId: String(movie.id),
                         }}
-                        className="h-[190px] w-[126px] shrink-0 overflow-hidden rounded-[10px] bg-[#f6f7f9] max-[480px]:h-[150px] max-[480px]:w-[100px]"
+                        className="h-[190px] w-[126px] shrink-0 overflow-hidden rounded-[10px] bg-[#e3e6eb] max-[480px]:h-[150px] max-[480px]:w-[100px]"
                       >
-                        <img
-                          src={movie.posterPath}
-                          alt={`${movie.title} 포스터`}
-                          className="block h-full w-full object-cover"
-                        />
+                        {posterUrl ? (
+                          <img
+                            src={posterUrl}
+                            alt={`${movie.title} 포스터`}
+                            className="block h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[11px] font-bold text-[#969da8]">
+                            이미지 없음
+                          </div>
+                        )}
                       </Link>
 
                       <div className="box-border flex min-w-0 flex-1 flex-col gap-2 pt-1">
@@ -146,18 +207,18 @@ export function SearchPage() {
 
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[12px] font-normal leading-none text-[#969da8]">
-                            {movie.originalTitle}
+                            {movie.original_title}
                           </span>
 
                           <span className="text-[12px] text-[#969da8]">·</span>
 
                           <span className="text-[12px] font-normal leading-none text-[#969da8]">
-                            {movie.releaseDate}
+                            {movie.release_date || "개봉일 정보 없음"}
                           </span>
                         </div>
 
                         <p className="m-0 line-clamp-3 text-[12.5px] font-normal leading-5 text-[#606774]">
-                          {movie.overview}
+                          {movie.overview || "줄거리 정보가 없어요."}
                         </p>
 
                         <div className="mt-auto flex items-center gap-3">
@@ -185,6 +246,14 @@ export function SearchPage() {
                 })}
               </div>
             )}
+
+            <div className="mt-8 flex justify-center">
+              <img
+                src="/images/logos/tmdb-logo.svg"
+                alt="TMDB"
+                className="h-5"
+              />
+            </div>
           </>
         )}
       </main>
