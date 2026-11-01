@@ -42,11 +42,13 @@ export default function ApiTestPage() {
   };
 
   const getRatings = async () => {
-    const response = await fetch("http://localhost:8080/members/1/ratings");
+    const response = await fetch(
+      "http://localhost:8080/members/1/ratings?page=0&size=10",
+    );
 
-    const data: Rating[] = await response.json();
+    const data = await response.json();
 
-    setRatings(data);
+    setRatings(data.content);
   };
 
   return (
