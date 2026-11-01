@@ -197,3 +197,8 @@ dist
 
 # TanStack Router cache
 .tanstack/
+
+### IntelliJ IDEA ###
+.idea/
+*.iml
+out/
