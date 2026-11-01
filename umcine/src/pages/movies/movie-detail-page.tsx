@@ -1,18 +1,90 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { movies } from "../../data/movies";
+import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import type { TmdbMovieDetail } from "../../api/movies/models";
 import { cn } from "../../utils/cn";
+import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import { useBookmarkStore } from "../../stores/bookmark-store";
+
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+
+function formatRuntime(runtime: number | null) {
+  if (typeof runtime !== "number") return "상영 시간 정보가 없어요.";
+  const hours = Math.floor(runtime / 60);
+  const minutes = runtime % 60;
+  return `${hours}시간 ${minutes}분`;
+}
 
 export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
-  const movie = movies.find((item) => item.id === Number(movieId));
+  const parsedMovieId = Number(movieId);
+  const isValidMovieId = Number.isInteger(parsedMovieId) && parsedMovieId > 0;
+
+  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(Number(movieId)),
+    state.bookmarkedMovieIds.includes(parsedMovieId),
   );
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
   const [rating, setRating] = useState(0);
+
+  useEffect(() => {
+    let ignore = false;
+
+    setErrorMessage(null);
+
+    if (!isValidMovieId) {
+      setMovie(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    getMovieDetail(parsedMovieId)
+      .then((response) => {
+        if (!ignore) setMovie(response);
+      })
+      .catch((error) => {
+        if (!ignore) {
+          setMovie(null);
+          setErrorMessage(getMovieDetailErrorMessage(error));
+        }
+      })
+      .finally(() => {
+        if (!ignore) setIsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [parsedMovieId, isValidMovieId]);
+
+  if (!isValidMovieId) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
+        올바르지 않은 영화 번호예요.
+      </main>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
+        영화 정보를 불러오는 중이에요.
+      </main>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
+        {errorMessage}
+      </main>
+    );
+  }
 
   if (!movie) {
     return (
@@ -25,12 +97,14 @@ export function MovieDetailPage() {
   return (
     <main className="pb-16">
       <section className="relative h-[460px] overflow-hidden bg-gray-900">
-        <img
-          src={movie.backdropPath}
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 size-full object-cover object-top"
-        />
+        {movie.backdrop_path && (
+          <img
+            src={`${IMAGE_BASE_URL}/w1280${movie.backdrop_path}`}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 size-full object-cover object-top"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
 
@@ -44,13 +118,13 @@ export function MovieDetailPage() {
           <div>
             <h1 className="text-5xl font-bold tracking-tight">{movie.title}</h1>
             <p className="mt-2 text-base text-white/80">
-              {movie.originalTitle}
+              {movie.original_title}
             </p>
             <p className="mt-4 text-sm font-semibold text-white/90">
               {[
-                movie.releaseDate,
-                movie.genres.join(" · "),
-                movie.runtime,
+                movie.release_date,
+                movie.genres.map((genre) => genre.name).join(", "),
+                formatRuntime(movie.runtime),
               ].join("  ·  ")}
             </p>
           </div>
@@ -59,11 +133,15 @@ export function MovieDetailPage() {
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 pt-10 lg:grid-cols-[1fr_340px]">
         <div className="flex flex-col gap-6 sm:flex-row">
-          <img
-            src={movie.posterPath}
-            alt={`${movie.title} 포스터`}
-            className="aspect-[2/3] w-44 shrink-0 rounded-xl object-cover shadow-xl ring-1 ring-black/5"
-          />
+          {movie.poster_path ? (
+            <img
+              src={`${IMAGE_BASE_URL}/w500${movie.poster_path}`}
+              alt={`${movie.title} 포스터`}
+              className="aspect-[2/3] w-44 shrink-0 rounded-xl object-cover shadow-xl ring-1 ring-black/5"
+            />
+          ) : (
+            <div className="aspect-[2/3] w-44 shrink-0 rounded-xl bg-gray-200" />
+          )}
           <div className="pt-1">
             <h2 className="text-xl font-bold">{movie.tagline}</h2>
             <p className="mt-3 max-w-xl text-[15px] leading-7 text-gray-600">
