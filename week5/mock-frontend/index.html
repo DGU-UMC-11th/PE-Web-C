@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>mock-frontend</title>
+  </head>
+  <body>
+    <button id="check">닉네임 중복 체크</button>
+    <pre id="result"></pre>
+    <script>
+      const result = document.getElementById("result");
+
+      document.getElementById("check").addEventListener("click", async () => {
+        const response = await fetch(
+          "http://localhost:3000/members/nickname/noco",
+          { cache: "no-store" },
+        );
+        result.textContent = JSON.stringify(await response.json());
+      });
+    </script>
+  </body>
+</html>
