@@ -1,4 +1,4 @@
-
+import { isHTTPError } from "ky";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type SubmitEvent } from "react";
 
@@ -120,34 +120,59 @@ export function SearchPage() {
 
     setIsLoading(true);
 
+    
     searchMovies({
       query: searchQuery,
       page: apiPage,
     })
       .then((response) => {
-        if (!ignore) {
-          // API 응답을 UI 타입으로 변환
-          setSearchResults(
-            response.results.map(toMovieCardData)
-          );
+        if (ignore) return;
 
-          setTotalResults(response.total_results);
+        const maxPage = Math.max(
+          1,
+          Math.ceil(
+            Math.min(response.total_results, 10000) / PAGE_SIZE
+          )
+        );
 
-          setTotalPages(
-            Math.max(
-              1,
-              Math.ceil(
-                Math.min(response.total_results, 10000) /
-                  PAGE_SIZE
-              )
-            )
-          );
+        // 현재 페이지가 실제 검색 결과 범위를 벗어난 경우
+        if (currentPage > maxPage) {
+          void navigate({
+            replace: true,
+            search: {
+              query: searchQuery,
+              page: maxPage === 1 ? undefined : maxPage,
+            },
+          });
+          return;
         }
+
+        setSearchResults(
+          response.results.map(toMovieCardData)
+        );
+
+        setTotalResults(response.total_results);
+        setTotalPages(maxPage);
       })
-      .catch(() => {
-        if (!ignore) {
-          setErrorMessage("검색 결과를 불러오지 못했어요.");
+      .catch((error: unknown) => {
+        if (ignore) return;
+
+        // API가 잘못된 페이지를 거부하는 경우
+        if (
+          apiPage > 1 &&
+          isHTTPError(error) &&
+          [400, 404, 422].includes(error.response.status)
+        ) {
+          void navigate({
+            replace: true,
+            search: {
+              query: searchQuery,
+            },
+          });
+          return;
         }
+
+        setErrorMessage("검색 결과를 불러오지 못했어요.");
       })
       .finally(() => {
         if (!ignore) {
@@ -158,7 +183,7 @@ export function SearchPage() {
     return () => {
       ignore = true;
     };
-  }, [searchQuery, apiPage, retryCount]);
+  }, [searchQuery, apiPage, currentPage, navigate, retryCount]);
 
   // 페이지 번호를 URL에 저장
   function handlePageChange(nextPage: number) {

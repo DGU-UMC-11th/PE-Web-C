@@ -149,7 +149,7 @@ export function MovieDetailPage() {
       {/* 영화 배경 및 기본 정보 */}
       <section
         aria-labelledby="movie-title"
-        className="relative isolate h-[360px] overflow-hidden bg-[#191b20] text-white"
+        className="relative isolate min-h-[360px] overflow-hidden bg-[#191b20] text-white"
       >
         {backdropUrl && (
           <img
@@ -170,7 +170,7 @@ export function MovieDetailPage() {
           className="absolute inset-0 -z-10 bg-linear-to-t from-black/50 to-transparent"
         />
 
-        <div className="mx-auto flex h-full w-[calc(100%_-_32px)] max-w-[1280px] flex-col justify-between py-6 min-[701px]:w-[calc(100%_-_160px)]">
+        <div className="mx-auto flex min-h-[360px] w-[calc(100%_-_32px)] max-w-[1280px] flex-col justify-between gap-6 py-6 min-[701px]:w-[calc(100%_-_160px)]">
           <Link
             to="/"
             className="inline-flex w-fit items-center gap-2 text-xs font-bold hover:underline"

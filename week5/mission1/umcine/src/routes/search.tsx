@@ -1,6 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useSearch,
+} from "@tanstack/react-router";
+
 import { SearchPage } from "../pages/movies/search-page";
 import { parsePageSearchParam } from "../utils/page-search-param";
+
+function SearchRoute() {
+  const { query, page } = useSearch({
+    from: "/search",
+  });
+
+  const apiPage = Math.ceil((page ?? 1) / 2);
+
+  return (
+    <SearchPage
+      key={`${query ?? ""}:${apiPage}`}
+    />
+  );
+}
 
 export const Route = createFileRoute("/search")({
   validateSearch: (
@@ -15,5 +33,5 @@ export const Route = createFileRoute("/search")({
 
     page: parsePageSearchParam(search.page),
   }),
-  component: SearchPage,
+  component: SearchRoute,
 });
