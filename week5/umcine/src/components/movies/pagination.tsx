@@ -6,8 +6,15 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
+const VISIBLE_PAGE_COUNT = 5;
+
 function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const pageCount = Math.min(VISIBLE_PAGE_COUNT, totalPages);
+  const firstPage = Math.max(
+    1,
+    Math.min(currentPage - 2, totalPages - pageCount + 1)
+  );
+  const pages = Array.from({ length: pageCount }, (_, index) => firstPage + index);
 
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label="페이지네이션">
