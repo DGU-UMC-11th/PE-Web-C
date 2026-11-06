@@ -32,9 +32,13 @@ export function Header() {
           >
             검색
           </Link>
-          <a href="/me" className={navLinkClass}>
+          <Link
+            to="/me"
+            className={navLinkClass}
+            activeProps={{ className: navLinkActiveClass }}
+          >
             내 정보
-          </a>
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-4">
@@ -45,12 +49,12 @@ export function Header() {
           >
             <img src="/icons/search.svg" alt="" className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            className="cursor-pointer rounded-md border-none bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+          <Link
+            to="/signup"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white no-underline"
           >
-            로그인
-          </button>
+            회원가입
+          </Link>
         </div>
       </div>
     </header>
