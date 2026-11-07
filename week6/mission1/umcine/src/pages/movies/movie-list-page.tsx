@@ -1,5 +1,6 @@
 
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import MovieGrid from "../../components/movies/movie-grid";
@@ -51,6 +52,20 @@ export function MovieListPage() {
       Math.min(moviesQuery.data?.total_results ?? 0, 10000) / PAGE_SIZE
     )
   );
+
+  // 요청 성공 후 URL 페이지가 범위를 벗어나면 마지막 페이지로 보정해요.
+  useEffect(() => {
+    if (!moviesQuery.isSuccess || currentPage <= totalPages) {
+      return;
+    }
+
+    void navigate({
+      replace: true,
+      search: {
+        page: totalPages === 1 ? undefined : totalPages,
+      },
+    });
+  }, [currentPage, totalPages, moviesQuery.isSuccess, navigate]);
 
   // 기존 정렬 옵션 유지
   const sortOrder = getSortOrder();

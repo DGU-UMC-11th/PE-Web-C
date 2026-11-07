@@ -56,7 +56,7 @@ export function MovieDetailPage() {
 
   const errorMessage = !isValidMovieId
     ? "올바르지 않은 영화 번호예요."
-    : movieDetailQuery.isError
+    : !movie && movieDetailQuery.isError
       ? getMovieDetailErrorMessage(movieDetailQuery.error)
       : !movie && !movieDetailQuery.isPending
         ? "영화를 찾을 수 없어요."
