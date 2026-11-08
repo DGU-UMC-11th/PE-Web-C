@@ -1,8 +1,27 @@
-import { useState } from "react";
 import { cn } from "../../utils/cn";
 
-function Pagination() {
-  const [page, setPage] = useState(1);
+interface PaginationProps {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
+  const safeTotalPages = Math.max(1, totalPages);
+
+  const visibleCount = Math.min(5, safeTotalPages);
+
+  const startPage = Math.max(
+    1,
+    Math.min(page - 2, safeTotalPages - visibleCount + 1),
+  );
+
+  const pages = Array.from(
+    {
+      length: visibleCount,
+    },
+    (_, index) => startPage + index,
+  );
 
   return (
     <nav
@@ -10,7 +29,7 @@ function Pagination() {
       aria-label="페이지네이션"
     >
       <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((pageNumber) => (
+        {pages.map((pageNumber) => (
           <button
             key={pageNumber}
             type="button"
@@ -19,7 +38,7 @@ function Pagination() {
               pageNumber === page && "bg-[#17191e] text-white",
             )}
             aria-current={pageNumber === page ? "page" : undefined}
-            onClick={() => setPage(pageNumber)}
+            onClick={() => onPageChange(pageNumber)}
           >
             {pageNumber}
           </button>
