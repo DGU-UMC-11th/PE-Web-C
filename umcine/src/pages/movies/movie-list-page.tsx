@@ -2,7 +2,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getMovies } from "../../api/movies/get-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { useBookmarkStore } from "../../stores/bookmark-store";
@@ -22,10 +22,7 @@ export function MovieListPage() {
   const page = searchPage ?? 1;
 
   // TanStack Query로 영화 목록 조회
-  const moviesQuery = useQuery({
-    queryKey: ["movies", "list", { page }],
-    queryFn: () => getMovies({ page }),
-  });
+  const moviesQuery = useQuery(movieQueries.list(page));
 
   const isLoading = moviesQuery.isPending;
 

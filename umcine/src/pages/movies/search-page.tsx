@@ -2,7 +2,7 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { searchMovies } from "../../api/movies/search-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import Pagination from "../../components/movies/pagination";
 import { useBookmarkStore } from "../../stores/bookmark-store";
 import { toMovieListItems } from "../../utils/movies/movie-adapter";
@@ -22,15 +22,7 @@ export function SearchPage() {
   const [searchText, setSearchText] = useState(query ?? "");
 
   // TanStack Query로 영화 검색 요청
-  const searchQuery = useQuery({
-    queryKey: ["movies", "search", { query: normalizedQuery, page }],
-    queryFn: () =>
-      searchMovies({
-        query: normalizedQuery,
-        page,
-      }),
-    enabled: normalizedQuery.length > 0,
-  });
+  const searchQuery = useQuery(movieQueries.search(normalizedQuery, page));
 
   // 요청 상태 및 검색 결과
   const isLoading = searchQuery.isLoading;
