@@ -1,22 +1,14 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { useEffect, useState } from "react";
-
-import { getMovies } from "../../api/movies/get-movies";
+import { movieQueries } from "../../api/movies/movie-queries";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { useBookmarkStore } from "../../stores/bookmark-store";
-import type { MovieListItem } from "../../types/movie-list-item";
 import { toMovieListItems } from "../../utils/movies/movie-adapter";
 
 type CardSize = "small" | "large";
-
-interface MovieListState {
-  requestKey: string;
-  movies: MovieListItem[];
-  totalPages: number;
-  errorMessage: string | null;
-}
 
 export function MovieListPage() {
   const { page: searchPage } = useSearch({
@@ -29,21 +21,33 @@ export function MovieListPage() {
 
   const page = searchPage ?? 1;
 
-  const [retryCount, setRetryCount] = useState(0);
+  // TanStack Query로 영화 목록 조회
+  const moviesQuery = useQuery(movieQueries.list(page));
 
-  const [movieState, setMovieState] = useState<MovieListState>({
-    requestKey: "",
-    movies: [],
-    totalPages: 1,
-    errorMessage: null,
-  });
+  const isLoading = moviesQuery.isPending;
 
+  const movies = moviesQuery.data
+    ? toMovieListItems(moviesQuery.data.results)
+    : [];
+
+  const totalPages = moviesQuery.data?.total_pages ?? 1;
+
+  const errorMessage = moviesQuery.isError
+    ? "영화 목록을 불러오지 못했어요."
+    : null;
+
+  function handleRetry() {
+    void moviesQuery.refetch();
+  }
+
+  // 북마크 상태 관리
   const bookmarkedMovieIds = useBookmarkStore(
     (state) => state.bookmarkedMovieIds,
   );
 
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
+  // 카드 크기 상태 관리
   const [cardSize, setCardSize] = useState<CardSize>(() => {
     try {
       return localStorage.getItem("umcine-card-size") === "large"
@@ -53,54 +57,6 @@ export function MovieListPage() {
       return "small";
     }
   });
-
-  const requestKey = `${page}:${retryCount}`;
-
-  useEffect(() => {
-    let ignore = false;
-
-    getMovies({
-      page,
-    })
-      .then((response) => {
-        if (!ignore) {
-          setMovieState({
-            requestKey,
-            movies: toMovieListItems(response.results),
-            totalPages: response.total_pages,
-            errorMessage: null,
-          });
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setMovieState({
-            requestKey,
-            movies: [],
-            totalPages: 1,
-            errorMessage: "영화 목록을 불러오지 못했어요.",
-          });
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [page, requestKey]);
-
-  const isCurrentRequest = movieState.requestKey === requestKey;
-
-  const isLoading = !isCurrentRequest;
-
-  const movies = isCurrentRequest ? movieState.movies : [];
-
-  const errorMessage = isCurrentRequest ? movieState.errorMessage : null;
-
-  const totalPages = isCurrentRequest ? movieState.totalPages : 1;
-
-  function handleRetry() {
-    setRetryCount((current) => current + 1);
-  }
 
   function handlePageChange(nextPage: number) {
     navigate({
