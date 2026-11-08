@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState, type SubmitEvent } from "react";
-import { movies } from "../../data/movies";
+import { searchMovies } from "../../api/movies/search-movies";
+import type { TmdbMovieListItem } from "../../api/movies/models";
 import { BookmarkButton } from "../../components/bookmark-button";
 
 export function SearchPage() {
@@ -12,14 +13,40 @@ export function SearchPage() {
     setSearchText(query ?? "");
   }, [query]);
 
-  const normalizedQuery = query?.trim().toLowerCase() ?? "";
-  const searchResults = normalizedQuery
-    ? movies.filter(
-        (movie) =>
-          movie.title.toLowerCase().includes(normalizedQuery) ||
-          movie.originalTitle.toLowerCase().includes(normalizedQuery),
-      )
-    : [];
+  const normalizedQuery = query?.trim() ?? "";
+
+  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    setMovies([]);
+    setErrorMessage(null);
+
+    if (!normalizedQuery) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    searchMovies({ query: normalizedQuery })
+      .then((response) => {
+        if (!ignore) setMovies(response.results);
+      })
+      .catch(() => {
+        if (!ignore) setErrorMessage("검색 결과를 불러오지 못했어요.");
+      })
+      .finally(() => {
+        if (!ignore) setIsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [normalizedQuery]);
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,29 +104,47 @@ export function SearchPage() {
 
       <div className="mb-2 mt-6 flex items-baseline justify-between">
         <h2 className="text-sm font-semibold">‘{query}’ 검색 결과</h2>
-        <p className="text-xs text-gray-500">영화 {searchResults.length}편</p>
+        <p className="text-xs text-gray-500">영화 {movies.length}편</p>
       </div>
 
-      {searchResults.length === 0 ? (
+      {isLoading && (
+        <p className="py-20 text-center text-sm text-gray-500">
+          검색 결과를 불러오는 중이에요.
+        </p>
+      )}
+
+      {!isLoading && errorMessage && (
+        <p className="py-20 text-center text-sm text-gray-500">
+          {errorMessage}
+        </p>
+      )}
+
+      {!isLoading && !errorMessage && movies.length === 0 && (
         <p className="py-20 text-center text-sm text-gray-500">
           검색 결과가 없어요.
         </p>
-      ) : (
+      )}
+
+      {!isLoading && !errorMessage && movies.length > 0 && (
         <ul className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
-          {searchResults.map((movie) => (
+          {movies.map((movie) => (
             <li
               key={movie.id}
               className="flex gap-4 border-b border-gray-200 py-5"
             >
-              <img
-                src={movie.posterPath}
-                alt={`${movie.title} 포스터`}
-                className="aspect-[2/3] w-20 shrink-0 rounded-md object-cover"
-              />
+              {movie.poster_path ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                  alt={`${movie.title} 포스터`}
+                  className="aspect-[2/3] w-20 shrink-0 rounded-md object-cover"
+                />
+              ) : (
+                <div className="aspect-[2/3] w-20 shrink-0 rounded-md bg-gray-200" />
+              )}
               <div className="min-w-0">
                 <h3 className="font-semibold">{movie.title}</h3>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {movie.originalTitle} · {movie.releaseDate}
+                  {movie.original_title} · {movie.release_date}
                 </p>
                 <p className="mt-2 line-clamp-2 text-sm text-gray-600">
                   {movie.overview}
