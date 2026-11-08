@@ -1,11 +1,15 @@
-// src/main/java/com/umc/movie/service/MemberService.java
+
 package com.umc.movie.service;
 
 import com.umc.movie.dto.EmailCheckResponse;
+import com.umc.movie.dto.MemberResponse;
 import com.umc.movie.dto.NicknameCheckResponse;
+import com.umc.movie.dto.SignUpRequest;
+import com.umc.movie.entity.Member;
 import com.umc.movie.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +21,7 @@ import java.util.regex.Pattern;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
 
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
@@ -35,6 +40,31 @@ public class MemberService {
 
         boolean exists = memberRepository.existsByEmail(email);
         return new EmailCheckResponse(!exists);
+    }
+
+    @Transactional
+    public MemberResponse signUp(SignUpRequest request) {
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+        }
+
+        if (memberRepository.existsByNickname(request.nickname())) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+        }
+
+        Member member = Member.builder()
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
+                .nickname(request.nickname())
+                .build();
+
+        Member savedMember = memberRepository.save(member);
+
+        return new MemberResponse(
+                savedMember.getMemberId(),
+                savedMember.getEmail(),
+                savedMember.getNickname()
+        );
     }
 
     private void validateNickname(String nickname) {
