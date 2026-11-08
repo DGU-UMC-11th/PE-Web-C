@@ -1,20 +1,11 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-
-import { useEffect, useState, type SubmitEvent } from "react";
+import { useState, type SubmitEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { searchMovies } from "../../api/movies/search-movies";
 import Pagination from "../../components/movies/pagination";
 import { useBookmarkStore } from "../../stores/bookmark-store";
-import type { MovieListItem } from "../../types/movie-list-item";
 import { toMovieListItems } from "../../utils/movies/movie-adapter";
-
-interface SearchResultState {
-  requestKey: string;
-  movies: MovieListItem[];
-  totalPages: number;
-  totalResults: number;
-  errorMessage: string | null;
-}
 
 export function SearchPage() {
   const { query, page: searchPage } = useSearch({
@@ -26,86 +17,49 @@ export function SearchPage() {
   });
 
   const page = searchPage ?? 1;
-
   const normalizedQuery = query?.trim() ?? "";
 
   const [searchText, setSearchText] = useState(query ?? "");
 
-  const [retryCount, setRetryCount] = useState(0);
-
-  const [searchResult, setSearchResult] = useState<SearchResultState>({
-    requestKey: "",
-    movies: [],
-    totalPages: 1,
-    totalResults: 0,
-    errorMessage: null,
+  // TanStack Query로 영화 검색 요청
+  const searchQuery = useQuery({
+    queryKey: ["movies", "search", { query: normalizedQuery, page }],
+    queryFn: () =>
+      searchMovies({
+        query: normalizedQuery,
+        page,
+      }),
+    enabled: normalizedQuery.length > 0,
   });
 
+  // 요청 상태 및 검색 결과
+  const isLoading = searchQuery.isLoading;
+
+  const movies = searchQuery.data
+    ? toMovieListItems(searchQuery.data.results)
+    : [];
+
+  const totalPages = searchQuery.data?.total_pages ?? 1;
+  const totalResults = searchQuery.data?.total_results ?? 0;
+
+  const errorMessage = searchQuery.isError
+    ? "검색 결과를 불러오지 못했어요."
+    : null;
+
+  // 북마크 상태
   const bookmarkedMovieIds = useBookmarkStore(
     (state) => state.bookmarkedMovieIds,
   );
 
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
-  const requestKey = `${normalizedQuery}:${page}:${retryCount}`;
-
-  useEffect(() => {
-    let ignore = false;
-
-    if (!normalizedQuery) {
-      return;
-    }
-
-    searchMovies({
-      query: normalizedQuery,
-      page,
-    })
-      .then((response) => {
-        if (!ignore) {
-          setSearchResult({
-            requestKey,
-            movies: toMovieListItems(response.results),
-            totalPages: response.total_pages,
-            totalResults: response.total_results,
-            errorMessage: null,
-          });
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setSearchResult({
-            requestKey,
-            movies: [],
-            totalPages: 1,
-            totalResults: 0,
-            errorMessage: "검색 결과를 불러오지 못했어요.",
-          });
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [normalizedQuery, page, requestKey]);
-
-  const isCurrentRequest = searchResult.requestKey === requestKey;
-
-  const isLoading = normalizedQuery !== "" && !isCurrentRequest;
-
-  const movies = isCurrentRequest ? searchResult.movies : [];
-
-  const errorMessage = isCurrentRequest ? searchResult.errorMessage : null;
-
-  const totalPages = isCurrentRequest ? searchResult.totalPages : 1;
-
-  const totalResults = isCurrentRequest ? searchResult.totalResults : 0;
-
+  // 검색 제출
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextQuery = searchText.trim();
 
-    navigate({
+    void navigate({
       search: nextQuery
         ? {
             query: nextQuery,
@@ -115,20 +69,23 @@ export function SearchPage() {
     });
   }
 
+  // 검색어 지우기
   function handleClear() {
     setSearchText("");
   }
 
+  // 오류 발생 시 다시 요청
   function handleRetry() {
-    setRetryCount((current) => current + 1);
+    void searchQuery.refetch();
   }
 
+  // 검색 결과 페이지 변경
   function handlePageChange(nextPage: number) {
     if (!normalizedQuery) {
       return;
     }
 
-    navigate({
+    void navigate({
       search: {
         query: normalizedQuery,
         page: nextPage,

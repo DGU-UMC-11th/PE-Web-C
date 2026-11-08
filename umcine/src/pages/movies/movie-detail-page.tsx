@@ -1,21 +1,15 @@
 import { Link, useParams } from "@tanstack/react-router";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import type { TmdbMovieDetail } from "../../api/movies/models";
 import { useBookmarkStore } from "../../stores/bookmark-store";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import {
   getTmdbBackdropUrl,
   getTmdbPosterUrl,
 } from "../../utils/movies/tmdb-image";
-
-interface MovieDetailState {
-  requestKey: string;
-  movie: TmdbMovieDetail | null;
-  errorMessage: string | null;
-}
 
 function formatRuntime(runtime: number | null) {
   if (runtime === null) {
@@ -45,13 +39,12 @@ export function MovieDetailPage() {
 
   const isValidMovieId = Number.isInteger(parsedMovieId) && parsedMovieId > 0;
 
-  const [detailState, setDetailState] = useState<MovieDetailState>({
-    requestKey: "",
-    movie: null,
-    errorMessage: null,
+  const movieDetailQuery = useQuery({
+    queryKey: ["movies", "detail", parsedMovieId],
+    queryFn: () => getMovieDetail(parsedMovieId),
+    enabled: isValidMovieId,
+    staleTime: 30 * 1000,
   });
-
-  const [retryCount, setRetryCount] = useState(0);
 
   const [rating, setRating] = useState(0);
 
@@ -62,40 +55,6 @@ export function MovieDetailPage() {
   );
 
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
-
-  const requestKey = `${parsedMovieId}:${retryCount}`;
-
-  useEffect(() => {
-    let ignore = false;
-
-    if (!isValidMovieId) {
-      return;
-    }
-
-    getMovieDetail(parsedMovieId)
-      .then((response) => {
-        if (!ignore) {
-          setDetailState({
-            requestKey,
-            movie: response,
-            errorMessage: null,
-          });
-        }
-      })
-      .catch((error: unknown) => {
-        if (!ignore) {
-          setDetailState({
-            requestKey,
-            movie: null,
-            errorMessage: getMovieDetailErrorMessage(error),
-          });
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [parsedMovieId, isValidMovieId, requestKey]);
 
   if (!isValidMovieId) {
     return (
@@ -109,13 +68,13 @@ export function MovieDetailPage() {
     );
   }
 
-  const isCurrentRequest = detailState.requestKey === requestKey;
+  const isLoading = movieDetailQuery.isPending;
 
-  const isLoading = !isCurrentRequest;
+  const movie = movieDetailQuery.data ?? null;
 
-  const movie = isCurrentRequest ? detailState.movie : null;
-
-  const errorMessage = isCurrentRequest ? detailState.errorMessage : null;
+  const errorMessage = movieDetailQuery.isError
+    ? getMovieDetailErrorMessage(movieDetailQuery.error)
+    : null;
 
   if (isLoading) {
     return (
@@ -140,7 +99,7 @@ export function MovieDetailPage() {
           {errorMessage !== "영화를 찾을 수 없어요." && (
             <button
               type="button"
-              onClick={() => setRetryCount((current) => current + 1)}
+              onClick={() => void movieDetailQuery.refetch()}
               className="cursor-pointer rounded-lg border-none bg-[#17191e] px-4 py-3 text-[13px] font-bold text-white"
             >
               다시 시도
