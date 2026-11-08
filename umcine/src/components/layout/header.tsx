@@ -24,8 +24,9 @@ export function Header() {
           <Link to="/search" className={NAV_LINK_CLASS}>
             검색
           </Link>
-          {/* 내 정보 화면은 아직 route가 없어서 링크 없이 메뉴 모양만 유지해요. */}
-          <span className="text-center text-sm font-bold text-text-secondary">내 정보</span>
+          <Link to="/my" className={NAV_LINK_CLASS}>
+            내 정보
+          </Link>
         </nav>
       </div>
 
