@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { getMovies } from "../../api/movies/get-movies";
-import type { TmdbMovieListItem } from "../../api/movies/models";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { movieListQuery } from "../../api/movies/movie-queries";
 import { MovieGrid, MovieGridSkeleton } from "../../components/movies/movie-grid";
 import { Pagination } from "../../components/movies/pagination";
 import { StatusMessage } from "../../components/movies/status-message";
@@ -9,36 +9,15 @@ const TOTAL_PAGES = 5;
 
 export function MovieListPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    // 화면을 떠나거나 페이지가 바뀌면 true가 되어, 늦게 도착한 이전 응답이 state를 바꾸지 못해요.
-    let ignore = false;
+  // 5주차의 useEffect + movies/isLoading/errorMessage state를 useQuery 하나로 바꿨어요.
+  // 요청, 로딩·오류 상태, 늦게 도착한 응답 무시, 캐시 재사용을 TanStack Query가 맡아요.
+  const moviesQuery = useQuery(movieListQuery(currentPage));
 
-    async function loadMovies() {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const response = await getMovies({ page: currentPage });
-        if (!ignore) setMovies(response.results);
-      } catch {
-        if (!ignore) setErrorMessage("영화 목록을 불러오지 못했어요.");
-      } finally {
-        if (!ignore) setIsLoading(false);
-      }
-    }
-
-    loadMovies();
-
-    return () => {
-      ignore = true;
-    };
-  }, [currentPage]);
+  const movies = moviesQuery.data?.results ?? [];
 
   function handlePageChange(page: number) {
+    // page가 바뀌면 queryKey도 바뀌어요. 그 페이지 캐시가 fresh면 요청 없이 바로 보여 줘요.
     setCurrentPage(page);
     window.scrollTo({ top: 0 });
   }
@@ -49,11 +28,11 @@ export function MovieListPage() {
         영화 목록
       </h1>
 
-      {/* 로딩 → 오류 → 빈 결과 → 성공 순서로 구분해요. */}
-      {isLoading ? (
+      {/* isPending(첫 데이터 없음) → isError → 빈 결과 → 성공 순서로 구분해요. */}
+      {moviesQuery.isPending ? (
         <MovieGridSkeleton />
-      ) : errorMessage ? (
-        <StatusMessage tone="error">{errorMessage}</StatusMessage>
+      ) : moviesQuery.isError ? (
+        <StatusMessage tone="error">영화 목록을 불러오지 못했어요.</StatusMessage>
       ) : movies.length === 0 ? (
         <StatusMessage>조건에 맞는 영화가 없어요.</StatusMessage>
       ) : (

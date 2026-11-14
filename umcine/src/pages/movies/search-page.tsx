@@ -1,17 +1,12 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState, type SubmitEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState, type SubmitEvent } from "react";
 import type { TmdbMovieListItem } from "../../api/movies/models";
-import { searchMovies } from "../../api/movies/search-movies";
+import { movieSearchQuery } from "../../api/movies/movie-queries";
 import { BookmarkButton } from "../../components/movies/bookmark-button";
 import { MoviePoster } from "../../components/movies/movie-poster";
 import { StatusMessage } from "../../components/movies/status-message";
 import { formatReleaseDate } from "../../utils/movies/format-movie";
-
-interface SearchResult {
-  query: string;
-  movies: TmdbMovieListItem[];
-  errorMessage: string | null;
-}
 
 export function SearchPage() {
   const { query } = useSearch({ from: "/search" });
@@ -27,44 +22,12 @@ export function SearchPage() {
 
   const normalizedQuery = (query ?? "").trim();
 
-  // 응답을 "어떤 검색어의 결과인지"와 함께 저장해요.
-  // 현재 검색어의 응답이 아직 없으면 로딩 중으로 계산하므로, Effect 안에서 setIsLoading(true)처럼
-  // state를 바로 바꾸지 않아도 돼요. (react-hooks/set-state-in-effect 규칙)
-  const [result, setResult] = useState<SearchResult | null>(null);
+  // 5주차에는 "어떤 검색어의 결과인지"를 state에 함께 저장해서 늦은 응답을 걸러 냈어요.
+  // 이제는 검색어가 queryKey에 들어가므로, 검색어마다 캐시가 따로 생기고 TanStack Query가 알아서 구분해요.
+  // enabled: 빈 검색어면 요청하지 않아요. (movieSearchQuery 안에 있어요.)
+  const searchQuery = useQuery(movieSearchQuery(normalizedQuery));
 
-  useEffect(() => {
-    // 빈 검색어는 요청하지 않아요.
-    if (!normalizedQuery) return;
-
-    // 검색어가 바뀌면 이전 Effect의 정리 함수가 먼저 실행돼요.
-    // 이전 검색 응답이 늦게 도착해도 현재 결과를 덮어쓰지 않아요.
-    let ignore = false;
-
-    searchMovies({ query: normalizedQuery })
-      .then((response) => {
-        if (!ignore) {
-          setResult({ query: normalizedQuery, movies: response.results, errorMessage: null });
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setResult({
-            query: normalizedQuery,
-            movies: [],
-            errorMessage: "검색 결과를 불러오지 못했어요.",
-          });
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [normalizedQuery]);
-
-  const isCurrentResult = result?.query === normalizedQuery;
-  const isLoading = normalizedQuery !== "" && !isCurrentResult;
-  const movies: TmdbMovieListItem[] = isCurrentResult ? result.movies : [];
-  const errorMessage = isCurrentResult ? result.errorMessage : null;
+  const movies: TmdbMovieListItem[] = searchQuery.data?.results ?? [];
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -98,10 +61,11 @@ export function SearchPage() {
       {/* 빈 검색어 → 로딩 → 오류 → 빈 결과 → 성공 순서로 구분해요. */}
       {!normalizedQuery ? (
         <StatusMessage>검색어를 입력해 주세요.</StatusMessage>
-      ) : isLoading ? (
+      ) : searchQuery.isLoading ? (
+        // isLoading = isPending && isFetching: enabled가 false인 빈 검색어에서는 로딩을 띄우지 않아요.
         <StatusMessage>‘{normalizedQuery}’ 검색 결과를 불러오는 중이에요.</StatusMessage>
-      ) : errorMessage ? (
-        <StatusMessage tone="error">{errorMessage}</StatusMessage>
+      ) : searchQuery.isError ? (
+        <StatusMessage tone="error">검색 결과를 불러오지 못했어요.</StatusMessage>
       ) : (
         <>
           <div className="flex items-baseline gap-2">
