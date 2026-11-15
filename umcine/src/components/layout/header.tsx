@@ -67,12 +67,12 @@ function Header() {
           />
         </Link>
 
-        <button
-          className="flex h-[42px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-lg border border-white bg-[#2563eb] px-4 text-[14px] font-extrabold leading-none text-white max-[768px]:h-9 max-[768px]:px-3 max-[768px]:text-[12px]"
-          type="button"
+        <Link
+          to="/login"
+          className="flex h-[42px] shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border border-white bg-[#2563eb] px-4 text-[14px] font-extrabold leading-none text-white max-[768px]:h-9 max-[768px]:px-3 max-[768px]:text-[12px]"
         >
           로그인
-        </button>
+        </Link>
       </div>
     </header>
   );
