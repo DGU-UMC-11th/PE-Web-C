@@ -1,7 +1,11 @@
-// src/main/java/com/umc/movie/service/RatingService.java
+
 package com.umc.movie.service;
 
+import com.umc.movie.dto.CreateRatingRequest;
 import com.umc.movie.dto.RatingResponse;
+import com.umc.movie.dto.UpdateRatingRequest;
+import com.umc.movie.entity.Member;
+import com.umc.movie.entity.Rating;
 import com.umc.movie.repository.MemberRepository;
 import com.umc.movie.repository.RatingRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,5 +45,78 @@ public class RatingService {
                         pageable
                 )
                 .map(RatingResponse::from);
+    }
+
+    @Transactional
+    public RatingResponse createRating(
+            Long memberId,
+            CreateRatingRequest request
+    ) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "존재하지 않는 유저입니다."
+                ));
+
+        if (ratingRepository.existsByMember_MemberIdAndMovieId(
+                memberId,
+                request.movieId()
+        )) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 평가한 영화입니다."
+            );
+        }
+
+        Rating rating = new Rating(
+                member,
+                request.movieId(),
+                request.score(),
+                request.comment()
+        );
+
+        return RatingResponse.from(ratingRepository.save(rating));
+    }
+
+    @Transactional
+    public RatingResponse updateRating(
+            Long memberId,
+            Long ratingId,
+            UpdateRatingRequest request
+    ) {
+        Rating rating = ratingRepository.findById(ratingId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "존재하지 않는 평점입니다."
+                ));
+
+        if (!rating.getMember().getMemberId().equals(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "다른 회원의 평점은 수정할 수 없습니다."
+            );
+        }
+
+        rating.update(request.score(), request.comment());
+
+        return RatingResponse.from(rating);
+    }
+
+    @Transactional
+    public void deleteRating(Long memberId, Long ratingId) {
+        Rating rating = ratingRepository.findById(ratingId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "존재하지 않는 평점입니다."
+                ));
+
+        if (!rating.getMember().getMemberId().equals(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "다른 회원의 평점은 삭제할 수 없습니다."
+            );
+        }
+
+        ratingRepository.delete(rating);
     }
 }
