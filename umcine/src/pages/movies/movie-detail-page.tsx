@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import type { TmdbMovieDetail } from "../../api/movies/models";
 import { cn } from "../../utils/cn";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import { useBookmarkStore } from "../../stores/bookmark-store";
@@ -16,51 +16,22 @@ function formatRuntime(runtime: number | null) {
 }
 
 export function MovieDetailPage() {
-  const { movieId } = useParams({ from: "/movies/$movieId" });
-  const parsedMovieId = Number(movieId);
-  const isValidMovieId = Number.isInteger(parsedMovieId) && parsedMovieId > 0;
+  const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
+  const movieId = Number(movieIdParam);
+  const isValidMovieId = Number.isInteger(movieId) && movieId > 0;
 
-  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const movieDetailQuery = useQuery({
+    queryKey: ["movies", "detail", movieId],
+    queryFn: () => getMovieDetail(movieId),
+    enabled: isValidMovieId,
+    staleTime: 30 * 1000,
+  });
 
   const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(parsedMovieId),
+    state.bookmarkedMovieIds.includes(movieId),
   );
   const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
   const [rating, setRating] = useState(0);
-
-  useEffect(() => {
-    let ignore = false;
-
-    setErrorMessage(null);
-
-    if (!isValidMovieId) {
-      setMovie(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    getMovieDetail(parsedMovieId)
-      .then((response) => {
-        if (!ignore) setMovie(response);
-      })
-      .catch((error) => {
-        if (!ignore) {
-          setMovie(null);
-          setErrorMessage(getMovieDetailErrorMessage(error));
-        }
-      })
-      .finally(() => {
-        if (!ignore) setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [parsedMovieId, isValidMovieId]);
 
   if (!isValidMovieId) {
     return (
@@ -70,7 +41,7 @@ export function MovieDetailPage() {
     );
   }
 
-  if (isLoading) {
+  if (movieDetailQuery.isPending) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
         영화 정보를 불러오는 중이에요.
@@ -78,21 +49,15 @@ export function MovieDetailPage() {
     );
   }
 
-  if (errorMessage) {
+  if (movieDetailQuery.isError) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
-        {errorMessage}
+        {getMovieDetailErrorMessage(movieDetailQuery.error)}
       </main>
     );
   }
 
-  if (!movie) {
-    return (
-      <main className="mx-auto max-w-6xl px-6 py-32 text-center text-gray-500">
-        영화를 찾을 수 없어요.
-      </main>
-    );
-  }
+  const movie = movieDetailQuery.data;
 
   return (
     <main className="pb-16">
