@@ -1,0 +1,13 @@
+package com.umc.movie.dto;
+
+import com.umc.movie.entity.Member;
+
+import java.time.LocalDateTime;
+
+// GET/PATCH /members/me 응답. 엔티티를 그대로 응답하면 password까지 나가므로 반드시 DTO로 옮겨 담아요.
+public record MemberInfoResponse(String email, String nickname, LocalDateTime createdAt) {
+
+    public static MemberInfoResponse from(Member member) {
+        return new MemberInfoResponse(member.getEmail(), member.getNickname(), member.getCreatedAt());
+    }
+}

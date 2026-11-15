@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: umc-movie
+  config:
+    # DB 비밀번호 같은 값은 프로젝트 루트의 .env에서 읽어요. (.env는 Git에 올리지 않아요)
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/umc_movie
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # Workbench(또는 sql/01_schema.sql)로 만든 테이블을 그대로 쓰고, 엔티티와 구조가 맞는지만 검사해요.
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# JWT 설정 (7주차). 비밀키는 코드에 쓰지 않고 .env에서 읽어요.
+jwt:
+  secret: ${JWT_SECRET}                      # 서명에 쓸 비밀키 (32자 이상)
+  access-expiration: ${JWT_ACCESS_EXPIRATION:3600}  # Access Token 유효시간(초)
