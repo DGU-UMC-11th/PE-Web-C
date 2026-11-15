@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { cancelPendingLogin } from "../utils/login-request";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 interface AuthState {
@@ -14,7 +15,10 @@ export const useAuthStore = create<AuthState>()(persist((set) => ({
   accessToken: null,
   nickname: "",
   signIn: (accessToken, nickname) => set({ accessToken, nickname }),
-  signOut: () => set({ accessToken: null, nickname: "" }),
+  signOut: () => {
+    cancelPendingLogin();
+    set({ accessToken: null, nickname: "" });
+  },
   setNickname: (nickname) => set({ nickname }),
 }), {
   name: "umcine-auth",

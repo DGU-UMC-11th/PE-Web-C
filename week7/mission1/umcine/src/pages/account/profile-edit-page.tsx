@@ -10,7 +10,9 @@ import { useMyInfo } from "../../hooks/use-my-info";
 import { isNicknameValid } from "../../utils/auth-validation";
 import { getMemberErrorMessage } from "../../utils/get-member-error-message";
 
-function ProfileEditForm({ profile }: { profile: MyInfo }) {
+function ProfileEditForm({ profile, refreshError, isRefreshing, onRetry }: {
+  profile: MyInfo; refreshError?: string; isRefreshing: boolean; onRetry: () => void;
+}) {
   const queryClient = useQueryClient();
   const setAuthNickname = useAuthStore((state) => state.setNickname);
   const [nickname, setNickname] = useState(profile.nickname);
@@ -34,11 +36,14 @@ function ProfileEditForm({ profile }: { profile: MyInfo }) {
       const updated = await updateMyInfo(nickname.trim());
       if (useAuthStore.getState().accessToken !== token) return;
       await queryClient.cancelQueries({ queryKey: MY_INFO_QUERY_KEY });
+      // 대기 중 계정이 바뀌었는지도 마지막 await 뒤에서 확인해요.
+      if (useAuthStore.getState().accessToken !== token) return;
       queryClient.setQueryData(MY_INFO_QUERY_KEY, updated);
       setAuthNickname(updated.nickname);
       setNickname(updated.nickname);
       setSuccess("내 정보를 수정했어요.");
     } catch (error) {
+      if (useAuthStore.getState().accessToken !== token) return;
       setError(getMemberErrorMessage(error, "내 정보를 수정하지 못했어요. 다시 시도해 주세요."));
     } finally {
       pending.current = false;
@@ -49,8 +54,13 @@ function ProfileEditForm({ profile }: { profile: MyInfo }) {
   return (
     <AuthCard title="내 정보 수정" description="나를 표현하는 닉네임으로 바꿔보세요.">
       <form noValidate onSubmit={handleSubmit} aria-busy={isSubmitting} className="space-y-5">
+        {refreshError && <div role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          <p>{refreshError} 입력 중인 내용은 유지돼요.</p>
+          <button type="button" onClick={onRetry} disabled={isRefreshing || isSubmitting}
+            className="mt-2 font-bold underline disabled:opacity-50">{isRefreshing ? "확인 중" : "다시 조회"}</button>
+        </div>}
         <AuthField id="profile-email" label="이메일" type="email" value={profile.email} readOnly hint="이메일은 변경할 수 없어요." className="bg-[#f6f7f9] text-[#656a73]" />
-        <AuthField id="profile-nickname" label="닉네임" autoComplete="nickname" value={nickname} disabled={isSubmitting}
+        <AuthField required id="profile-nickname" label="닉네임" autoComplete="nickname" value={nickname} disabled={isSubmitting}
           onChange={(e) => { setNickname(e.target.value); setError(""); setSuccess(""); }} hint="앞뒤 공백을 제외하고 2~12자로 입력해 주세요."
           error={!isValid ? "닉네임은 2~12자로 입력해 주세요." : undefined} />
         {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -67,10 +77,12 @@ function ProfileEditForm({ profile }: { profile: MyInfo }) {
 
 export function ProfileEditPage() {
   const profile = useMyInfo();
-  if (!profile.isLoggedIn || profile.isPending || profile.isError || !profile.data) {
+  if (!profile.isLoggedIn || !profile.data) {
     return <ProfileState isLoggedIn={profile.isLoggedIn} isPending={profile.isPending}
       message={getMemberErrorMessage(profile.error, "내 정보를 불러오지 못했어요.")}
       onRetry={() => void profile.refetch()} />;
   }
-  return <ProfileEditForm key={profile.data.email} profile={profile.data} />;
+  return <ProfileEditForm key={profile.data.email} profile={profile.data}
+    refreshError={profile.isError ? getMemberErrorMessage(profile.error, "최신 정보를 불러오지 못했어요.") : undefined}
+    isRefreshing={profile.isFetching} onRetry={() => void profile.refetch()} />;
 }

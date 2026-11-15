@@ -133,16 +133,6 @@ export function SearchPage() {
     void navigate({ replace: true, search: { query: searchQuery } });
   }, [apiPage, moviesQuery.isError, moviesQuery.error, navigate, searchQuery]);
 
-  // 페이지 번호를 URL에 저장
-  function handlePageChange(nextPage: number) {
-    void navigate({
-      search: {
-        query: searchQuery,
-        page: nextPage === 1 ? undefined : nextPage,
-      },
-    });
-  }
-
   // TMDB 결과 20편을 10편씩 분리
   const pageOffset = ((currentPage - 1) % 2) * PAGE_SIZE;
 
@@ -302,7 +292,7 @@ export function SearchPage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={handlePageChange}
+              getPageDestination={(page) => ({ to: "/search", search: { query: searchQuery, page: page === 1 ? undefined : page } })}
             />
           )}
         </>

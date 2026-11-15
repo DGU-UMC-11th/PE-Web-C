@@ -100,23 +100,23 @@ export function SignupPage() {
   return (
     <AuthCard title="회원가입" description="UMCine에서 나만의 영화 취향을 찾아보세요.">
       <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting} className="space-y-5">
-        <AuthField id="signup-email" label="이메일" type="email" autoComplete="email" placeholder="example@email.com"
+        <AuthField required id="signup-email" label="이메일" type="email" autoComplete="email" placeholder="example@email.com"
           value={form.email} onChange={(e) => handleChangeField("email", e.target.value)}
           disabled={isSubmitting || duplicateCheck.email.isChecking}
           error={form.email.length > 0 && !isEmailValid ? "올바른 이메일 형식으로 입력해 주세요." : !duplicateCheck.email.isAvailable ? duplicateCheck.email.message : undefined}
           success={duplicateCheck.email.isAvailable ? duplicateCheck.email.message : undefined}
           action={duplicateButton("email", isEmailValid)} />
-        <AuthField id="signup-nickname" label="닉네임" autoComplete="nickname" placeholder="닉네임을 입력해 주세요"
+        <AuthField required id="signup-nickname" label="닉네임" autoComplete="nickname" placeholder="닉네임을 입력해 주세요"
           value={form.nickname} onChange={(e) => handleChangeField("nickname", e.target.value)}
           disabled={isSubmitting || duplicateCheck.nickname.isChecking} hint="앞뒤 공백을 제외하고 2~12자로 입력해 주세요."
           error={form.nickname.length > 0 && !isNicknameValid ? "닉네임은 2~12자로 입력해 주세요." : !duplicateCheck.nickname.isAvailable ? duplicateCheck.nickname.message : undefined}
           success={duplicateCheck.nickname.isAvailable ? duplicateCheck.nickname.message : undefined}
           action={duplicateButton("nickname", isNicknameValid)} />
-        <AuthField id="signup-password" label="비밀번호" type="password" autoComplete="new-password" placeholder="비밀번호를 입력해 주세요"
+        <AuthField required id="signup-password" label="비밀번호" type="password" autoComplete="new-password" placeholder="비밀번호를 입력해 주세요"
           value={form.password} onChange={(e) => handleChangeField("password", e.target.value)} disabled={isSubmitting}
           hint="영문 대문자·소문자, 숫자, 특수문자(!@#$%^&*)를 모두 포함해 8자 이상 입력해 주세요."
           error={form.password.length > 0 && !isPasswordValid ? "대문자·소문자·숫자·특수문자(!@#$%^&*)를 포함해 8자 이상이어야 해요." : undefined} />
-        <AuthField id="signup-password-confirm" label="비밀번호 확인" type="password" autoComplete="new-password" placeholder="비밀번호를 한 번 더 입력해 주세요"
+        <AuthField required id="signup-password-confirm" label="비밀번호 확인" type="password" autoComplete="new-password" placeholder="비밀번호를 한 번 더 입력해 주세요"
           value={form.passwordConfirm} onChange={(e) => handleChangeField("passwordConfirm", e.target.value)} disabled={isSubmitting}
           error={form.passwordConfirm.length > 0 && !isPasswordConfirmValid ? "비밀번호가 일치하지 않아요." : undefined} />
         {submitError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{submitError}</p>}

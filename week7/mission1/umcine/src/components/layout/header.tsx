@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../stores/auth-store";
+import { useBookmarkNoticeStore } from "../../stores/bookmark-notice-store";
 import { cn } from "../../utils/cn";
 
 export function Header() {
@@ -8,6 +9,7 @@ export function Header() {
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((state) => state.accessToken);
   const nickname = useAuthStore((state) => state.nickname);
+  const bookmarkNotice = useBookmarkNoticeStore((state) => state.message);
 
   async function handleLogout() {
     useAuthStore.getState().signOut();
@@ -44,6 +46,11 @@ export function Header() {
           </> : <Link to="/login" className="flex h-[42px] items-center rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">로그인</Link>}
         </div>
       </div>
+      {bookmarkNotice && <div role="alert" className="flex items-center justify-center gap-3 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p>{bookmarkNotice}</p>
+        <button type="button" aria-label="북마크 안내 닫기" className="shrink-0 rounded px-2 py-1 font-bold"
+          onClick={() => useBookmarkNoticeStore.getState().setMessage("")}>닫기</button>
+      </div>}
     </header>
   );
 }

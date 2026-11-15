@@ -85,15 +85,6 @@ export function MovieListPage() {
     pageOffset + PAGE_SIZE
   );
 
-  // 페이지를 변경하면 URL도 변경
-  function handlePageChange(nextPage: number) {
-    void navigate({
-      search: {
-        page: nextPage === 1 ? undefined : nextPage,
-      },
-    });
-  }
-
   return (
     <main className="mx-auto w-[calc(100%_-_32px)] max-w-[1280px] flex-1 pb-[54px] pt-6 min-[701px]:w-[calc(100%_-_160px)]">
       <h1 className="mb-5 text-[32px] leading-[44px] font-extrabold tracking-[-1.3px] sm:text-4xl">
@@ -127,7 +118,7 @@ export function MovieListPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={handlePageChange}
+            getPageDestination={(page) => ({ to: "/", search: { page: page === 1 ? undefined : page } })}
           />
         </>
       )}
