@@ -24,7 +24,7 @@ export function Header() {
           <Link to="/search" className={NAV_LINK_CLASS}>
             검색
           </Link>
-          <Link to="/my" className={NAV_LINK_CLASS}>
+          <Link to="/me" className={NAV_LINK_CLASS}>
             내 정보
           </Link>
         </nav>
@@ -38,12 +38,12 @@ export function Header() {
         >
           <img src="/icons/search.svg" alt="" width={24} height={24} />
         </Link>
-        <button
-          type="button"
+        <Link
+          to="/login"
           className="flex h-[42px] items-center justify-center rounded-lg border border-bg-surface bg-action-primary px-4 text-sm font-extrabold whitespace-nowrap text-bg-surface hover:bg-action-hover active:bg-action-pressed"
         >
           로그인
-        </button>
+        </Link>
       </div>
     </header>
   );
