@@ -1,0 +1,50 @@
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { CheckResponseDto } from '../dto/check-response.dto';
+import { CreateMemberDto } from '../dto/create-member.dto';
+import { MemberResponseDto } from '../dto/member-response.dto';
+import { Member } from '../entity/member.entity';
+
+const BCRYPT_SALT_ROUNDS = 10;
+
+@Injectable()
+export class MemberService {
+  constructor(
+    @InjectRepository(Member)
+    private readonly memberRepository: Repository<Member>,
+  ) {}
+
+  async checkNickname(nickname: string): Promise<CheckResponseDto> {
+    const exists = await this.memberRepository.exists({ where: { nickname } });
+    return { available: !exists };
+  }
+
+  async checkEmail(email: string): Promise<CheckResponseDto> {
+    const exists = await this.memberRepository.exists({ where: { email } });
+    return { available: !exists };
+  }
+
+  async signUp(dto: CreateMemberDto): Promise<MemberResponseDto> {
+    if (await this.memberRepository.exists({ where: { email: dto.email } })) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+
+    if (
+      await this.memberRepository.exists({ where: { nickname: dto.nickname } })
+    ) {
+      throw new ConflictException('이미 사용 중인 닉네임입니다.');
+    }
+
+    const savedMember = await this.memberRepository.save(
+      this.memberRepository.create({
+        email: dto.email,
+        password: await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS),
+        nickname: dto.nickname,
+      }),
+    );
+
+    return MemberResponseDto.from(savedMember);
+  }
+}
