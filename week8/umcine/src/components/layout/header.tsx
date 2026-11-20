@@ -1,0 +1,101 @@
+import { Link, useLocation } from "@tanstack/react-router";
+import { useMeQuery } from "../../hooks/use-me-query";
+import { useAuthStore } from "../../stores/auth-store";
+import { cn } from "../../utils/cn";
+
+const NAV_ITEMS = [
+  { label: "영화", to: "/" },
+  { label: "검색", to: "/search" },
+] as const;
+
+export default function Header() {
+  const location = useLocation();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const meQuery = useMeQuery();
+
+  return (
+    <header className="sticky top-0 z-10 border-b border-border bg-surface">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-20 lg:py-6">
+        <div className="flex items-center gap-6 lg:gap-[42px]">
+          <Link to="/" className="flex items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-lg border-2 border-ink">
+              <span
+                className="icon size-6 text-ink [--icon-url:url('/icons/movie.svg')]"
+                aria-hidden="true"
+              />
+            </span>
+            <span className="text-xl font-black tracking-[-0.7px] text-ink">
+              UMCine
+            </span>
+          </Link>
+
+          <nav aria-label="주요 메뉴">
+            <ul className="flex items-center gap-5 lg:gap-[30px]">
+              {NAV_ITEMS.map(({ label, to }) => {
+                const isActive = location.pathname === to;
+
+                return (
+                  <li key={to}>
+                    <Link
+                      to={to}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        "text-sm font-bold text-secondary",
+                        isActive && "text-ink underline",
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <Link
+            to="/search"
+            aria-label="검색"
+            className="flex size-[42px] items-center justify-center rounded-lg border border-border bg-surface"
+          >
+            <span
+              className="icon size-6 text-ink [--icon-url:url('/icons/search.svg')]"
+              aria-hidden="true"
+            />
+          </Link>
+
+          {/* 토큰이 없으면 로그인, 첫 조회 중이면 자리만, 조회되면 마이페이지 */}
+          {!accessToken ? (
+            <>
+              <Link
+                to="/signup"
+                className="hidden h-[42px] items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-extrabold text-ink sm:flex"
+              >
+                회원가입
+              </Link>
+              <Link
+                to="/login"
+                className="flex h-[42px] items-center justify-center rounded-lg border border-white bg-accent px-4 text-sm font-extrabold text-white"
+              >
+                로그인
+              </Link>
+            </>
+          ) : meQuery.isLoading ? (
+            <span
+              className="h-[42px] w-28 animate-pulse rounded-lg bg-surface-hover"
+              aria-hidden="true"
+            />
+          ) : (
+            <Link
+              to="/me"
+              className="flex h-[42px] items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-extrabold text-ink"
+            >
+              {meQuery.data ? `${meQuery.data.nickname} 님` : "마이페이지"}
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
