@@ -13,7 +13,8 @@ function ProfileEditForm({ profile, refreshError, isRefreshing, onRetry }: {
   profile: MyInfo; refreshError?: string; isRefreshing: boolean; onRetry: () => void;
 }) {
   const updateMutation = useUpdateMeMutation();
-  const [nickname, setNickname] = useState(profile.nickname);
+  const [nicknameDraft, setNicknameDraft] = useState<string | null>(null);
+  const nickname = nicknameDraft ?? profile.nickname;
   const isSubmitting = updateMutation.isPending;
   const success = updateMutation.isSuccess;
   const error = updateMutation.isError
@@ -27,9 +28,9 @@ function ProfileEditForm({ profile, refreshError, isRefreshing, onRetry }: {
     const accessToken = useAuthStore.getState().accessToken;
     if (!isValid || !isChanged || isSubmitting || !accessToken) return;
     updateMutation.mutate({ nickname: nickname.trim(), accessToken }, {
-      onSuccess: (updated) => {
+      onSuccess: () => {
         if (useAuthStore.getState().accessToken === accessToken) {
-          setNickname(updated.nickname);
+          setNicknameDraft(null);
         }
       },
     });
@@ -45,7 +46,7 @@ function ProfileEditForm({ profile, refreshError, isRefreshing, onRetry }: {
         </div>}
         <AuthField id="profile-email" label="이메일" type="email" value={profile.email} readOnly hint="이메일은 변경할 수 없어요." className="bg-[#f6f7f9] text-[#656a73]" />
         <AuthField required id="profile-nickname" label="닉네임" autoComplete="nickname" value={nickname} disabled={isSubmitting}
-          onChange={(e) => { setNickname(e.target.value); updateMutation.reset(); }} hint="앞뒤 공백을 제외하고 2~12자로 입력해 주세요."
+          onChange={(e) => { setNicknameDraft(e.target.value); updateMutation.reset(); }} hint="앞뒤 공백을 제외하고 2~12자로 입력해 주세요."
           error={!isValid ? "닉네임은 2~12자로 입력해 주세요." : undefined} />
         {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         {success && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-700">내 정보를 수정했어요.</p>}
