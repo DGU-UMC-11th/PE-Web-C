@@ -1,10 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
+import { getMe } from "../../api/members/me";
+import { getFavoriteStatus } from "../../api/favorites/favorites";
+import { getMemberRatings } from "../../api/ratings/ratings";
+import {
+  useAddFavoriteMutation,
+  useRemoveFavoriteMutation,
+} from "../../hooks/use-favorite-mutations";
+import {
+  useCreateRatingMutation,
+  useDeleteRatingMutation,
+  useUpdateRatingMutation,
+} from "../../hooks/use-rating-mutations";
+import { useAuthStore } from "../../stores/auth-store";
 import { cn } from "../../utils/cn";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
-import { useBookmarkStore } from "../../stores/bookmark-store";
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
@@ -19,6 +31,8 @@ export function MovieDetailPage() {
   const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
   const movieId = Number(movieIdParam);
   const isValidMovieId = Number.isInteger(movieId) && movieId > 0;
+  const navigate = useNavigate();
+  const accessToken = useAuthStore((state) => state.accessToken);
 
   const movieDetailQuery = useQuery({
     queryKey: ["movies", "detail", movieId],
@@ -27,11 +41,80 @@ export function MovieDetailPage() {
     staleTime: 30 * 1000,
   });
 
-  const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(movieId),
-  );
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
-  const [rating, setRating] = useState(0);
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  const memberId = meQuery.data?.memberId;
+
+  const favoriteStatusQuery = useQuery({
+    queryKey: ["favorites", "status", movieId],
+    queryFn: () => getFavoriteStatus(movieId),
+    enabled: Boolean(accessToken) && isValidMovieId,
+    retry: false,
+  });
+  const isFavorite = favoriteStatusQuery.data ?? false;
+
+  const ratingsQuery = useQuery({
+    queryKey: ["ratings", "member", memberId],
+    queryFn: () => getMemberRatings(memberId as number),
+    enabled: memberId !== undefined,
+  });
+  const myRating = ratingsQuery.data?.find((r) => r.movieId === movieId);
+
+  const addFavoriteMutation = useAddFavoriteMutation();
+  const removeFavoriteMutation = useRemoveFavoriteMutation();
+  const createRatingMutation = useCreateRatingMutation();
+  const updateRatingMutation = useUpdateRatingMutation();
+  const deleteRatingMutation = useDeleteRatingMutation();
+
+  const [score, setScore] = useState(0);
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    setScore(myRating?.score ?? 0);
+    setComment(myRating?.comment ?? "");
+  }, [myRating?.ratingId, myRating?.score, myRating?.comment]);
+
+  const isFavoritePending =
+    addFavoriteMutation.isPending || removeFavoriteMutation.isPending;
+  const isRatingPending =
+    createRatingMutation.isPending ||
+    updateRatingMutation.isPending ||
+    deleteRatingMutation.isPending;
+
+  const goLogin = () => {
+    alert("로그인이 필요해요.");
+    navigate({ to: "/login" });
+  };
+
+  const handleToggleFavorite = () => {
+    if (!accessToken) return goLogin();
+    if (isFavoritePending) return;
+    if (isFavorite) removeFavoriteMutation.mutate(movieId);
+    else addFavoriteMutation.mutate(movieId);
+  };
+
+  const handleSaveRating = () => {
+    if (!accessToken) return goLogin();
+    if (score < 1 || isRatingPending) return;
+    const trimmed = comment.trim();
+    const body = { score, comment: trimmed.length > 0 ? trimmed : undefined };
+
+    if (myRating) {
+      updateRatingMutation.mutate({ ratingId: myRating.ratingId, ...body });
+    } else {
+      createRatingMutation.mutate({ movieId, ...body });
+    }
+  };
+
+  const handleDeleteRating = () => {
+    if (!myRating || isRatingPending) return;
+    deleteRatingMutation.mutate(myRating.ratingId);
+  };
 
   if (!isValidMovieId) {
     return (
@@ -114,11 +197,12 @@ export function MovieDetailPage() {
             </p>
             <button
               type="button"
-              aria-pressed={isBookmarked}
-              onClick={() => toggleBookmark(movie.id)}
+              aria-pressed={isFavorite}
+              disabled={isFavoritePending}
+              onClick={handleToggleFavorite}
               className={cn(
-                "mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
-                isBookmarked
+                "mt-6 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60",
+                isFavorite
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "border border-blue-600 bg-white text-blue-600 hover:bg-blue-50",
               )}
@@ -126,13 +210,13 @@ export function MovieDetailPage() {
               <svg
                 viewBox="0 0 24 24"
                 className="size-4"
-                fill={isBookmarked ? "currentColor" : "none"}
+                fill={isFavorite ? "currentColor" : "none"}
                 stroke="currentColor"
                 strokeWidth="2"
               >
                 <path d="M6 3h12v18l-6-4-6 4z" />
               </svg>
-              {isBookmarked ? "북마크 해제" : "북마크 추가"}
+              {isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
             </button>
           </div>
         </div>
@@ -140,19 +224,21 @@ export function MovieDetailPage() {
         <aside className="h-fit rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-bold">내 평점</h2>
           <p className="mt-1 text-xs text-gray-500">
-            별점을 눌러 평가를 남겨보세요.
+            {accessToken
+              ? "별점을 눌러 평가를 남겨보세요."
+              : "로그인하면 평점을 남길 수 있어요."}
           </p>
           <div className="mt-4 flex gap-2">
-            {[1, 2, 3, 4, 5].map((score) => (
+            {[1, 2, 3, 4, 5].map((value) => (
               <button
-                key={score}
+                key={value}
                 type="button"
-                aria-label={`${score}점`}
-                aria-pressed={score <= rating}
-                onClick={() => setRating(score)}
+                aria-label={`${value}점`}
+                aria-pressed={value <= score}
+                onClick={() => setScore(value)}
                 className={cn(
                   "flex size-10 items-center justify-center rounded-lg border text-xl transition-colors",
-                  score <= rating
+                  value <= score
                     ? "border-yellow-400 bg-yellow-50 text-yellow-400"
                     : "border-gray-200 bg-white text-gray-300 hover:text-yellow-300",
                 )}
@@ -162,15 +248,30 @@ export function MovieDetailPage() {
             ))}
           </div>
           <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            maxLength={500}
             placeholder="영화를 보고 느낀 점을 남겨보세요."
             className="mt-4 h-28 w-full resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm outline-none focus:border-gray-400 focus:bg-white"
           />
           <button
             type="button"
-            className="mt-3 w-full rounded-lg bg-gray-900 py-2.5 text-sm font-semibold text-white hover:bg-gray-700"
+            disabled={score < 1 || isRatingPending}
+            onClick={handleSaveRating}
+            className="mt-3 w-full rounded-lg bg-gray-900 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            평점 저장
+            {isRatingPending ? "저장 중" : myRating ? "평점 수정" : "평점 저장"}
           </button>
+          {myRating && (
+            <button
+              type="button"
+              disabled={isRatingPending}
+              onClick={handleDeleteRating}
+              className="mt-2 w-full rounded-lg border border-red-300 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
+            >
+              평점 삭제
+            </button>
+          )}
         </aside>
       </section>
     </main>
