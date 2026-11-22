@@ -1,15 +1,11 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import { getMe } from "../../api/members/me";
+import { getFavorites } from "../../api/favorites/favorites";
+import { useAuthStore } from "../../stores/auth-store";
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
-
-// 서버 연동 전 임시 데이터
-const TEMP_PROFILE = {
-  nickname: "mini0722",
-  email: "llltop11@naver.com",
-};
 
 function PersonIcon() {
   return (
@@ -25,16 +21,29 @@ function PersonIcon() {
 }
 
 export function MyPage() {
-  // 내가 북마크한 영화 ID 목록
-  const bookmarkedMovieIds = useBookmarkStore(
-    (state) => state.bookmarkedMovieIds,
-  );
+  const accessToken = useAuthStore((state) => state.accessToken);
+
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const favoritesQuery = useQuery({
+    queryKey: ["favorites", "list"],
+    queryFn: getFavorites,
+    enabled: Boolean(accessToken),
+    retry: false,
+  });
+  const favorites = favoritesQuery.data ?? [];
 
   // 영화 상세 페이지와 같은 query key를 써서 캐시를 함께 사용해요
-  const bookmarkQueries = useQueries({
-    queries: bookmarkedMovieIds.map((movieId) => ({
-      queryKey: ["movies", "detail", movieId],
-      queryFn: () => getMovieDetail(movieId),
+  const movieQueries = useQueries({
+    queries: favorites.map((favorite) => ({
+      queryKey: ["movies", "detail", favorite.movieId],
+      queryFn: () => getMovieDetail(favorite.movieId),
     })),
   });
 
@@ -59,11 +68,15 @@ export function MyPage() {
           <dl className="grid grid-cols-1 gap-x-20 gap-y-3 sm:grid-cols-[auto_auto]">
             <div>
               <dt className="text-[11px] text-gray-400">닉네임</dt>
-              <dd className="text-sm font-bold">{TEMP_PROFILE.nickname}</dd>
+              <dd className="text-sm font-bold">
+                {meQuery.data?.nickname ?? "-"}
+              </dd>
             </div>
             <div>
               <dt className="text-[11px] text-gray-400">이메일</dt>
-              <dd className="text-sm font-bold">{TEMP_PROFILE.email}</dd>
+              <dd className="text-sm font-bold">
+                {meQuery.data?.email ?? "-"}
+              </dd>
             </div>
           </dl>
         </div>
@@ -72,14 +85,22 @@ export function MyPage() {
       <section className="mt-8 border-t border-gray-200 pt-6">
         <h2 className="text-sm font-bold">내 즐겨찾기</h2>
 
-        {bookmarkedMovieIds.length === 0 ? (
+        {favoritesQuery.isPending ? (
+          <p className="py-16 text-center text-sm text-gray-500">
+            즐겨찾기를 불러오는 중이에요.
+          </p>
+        ) : favoritesQuery.isError ? (
+          <p className="py-16 text-center text-sm text-gray-500">
+            즐겨찾기를 불러오지 못했어요.
+          </p>
+        ) : favorites.length === 0 ? (
           <p className="py-16 text-center text-sm text-gray-500">
             아직 즐겨찾기한 영화가 없어요.
           </p>
         ) : (
           <ul className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
-            {bookmarkQueries.map((query, index) => {
-              const movieId = bookmarkedMovieIds[index];
+            {movieQueries.map((query, index) => {
+              const movieId = favorites[index].movieId;
 
               if (query.isPending) {
                 return (
@@ -118,7 +139,7 @@ export function MyPage() {
                     </h3>
                   </Link>
                   <p className="text-xs text-gray-400">
-                    {movie.release_date.replaceAll("-", ".")}
+                    {movie.release_date?.replaceAll("-", ".")}
                   </p>
                 </li>
               );
