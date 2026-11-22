@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
 const navLinkClass = "text-gray-500 hover:text-gray-900";
-const activeNavLinkClass = "font-semibold text-gray-900 underline underline-offset-4";
+const activeNavLinkClass =
+  "font-semibold text-gray-900 underline underline-offset-4";
 
 export function Header() {
   return (
@@ -27,7 +28,13 @@ export function Header() {
             >
               검색
             </Link>
-            <span className={navLinkClass}>내 정보</span>
+            <Link
+              to="/my"
+              className={navLinkClass}
+              activeProps={{ className: activeNavLinkClass }}
+            >
+              내 정보
+            </Link>
           </nav>
         </div>
 
@@ -37,17 +44,23 @@ export function Header() {
             aria-label="검색"
             className="flex size-9 items-center justify-center rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100"
           >
-            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="11" cy="11" r="7" />
               <path d="m20 20-3.5-3.5" />
             </svg>
           </Link>
-          <button
-            type="button"
+          <Link
+            to="/login"
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
             로그인
-          </button>
+          </Link>
         </div>
       </div>
     </header>
