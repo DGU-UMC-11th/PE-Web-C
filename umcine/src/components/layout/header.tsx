@@ -1,10 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { getMe } from "../../api/members/me";
+import { useAuthStore } from "../../stores/auth-store";
 
 const navLinkClass = "text-gray-500 hover:text-gray-900";
 const activeNavLinkClass =
   "font-semibold text-gray-900 underline underline-offset-4";
+const buttonClass =
+  "rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700";
 
 export function Header() {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -55,12 +69,17 @@ export function Header() {
               <path d="m20 20-3.5-3.5" />
             </svg>
           </Link>
-          <Link
-            to="/login"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            로그인
-          </Link>
+          {!accessToken ? (
+            <Link to="/login" className={buttonClass}>
+              로그인
+            </Link>
+          ) : meQuery.isLoading ? (
+            <span className="h-9 w-24 animate-pulse rounded-md bg-gray-200" />
+          ) : (
+            <Link to="/my" className={buttonClass}>
+              마이페이지
+            </Link>
+          )}
         </div>
       </div>
     </header>
