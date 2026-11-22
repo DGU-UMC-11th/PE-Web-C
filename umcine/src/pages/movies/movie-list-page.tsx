@@ -1,53 +1,90 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
-import { movieQueries } from "../../api/movies/movie-queries";
+import { getMovies } from "../../api/movies/get-movies";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import {
+  useFavoritesQuery,
+  useCreateFavoriteMutation,
+  useDeleteFavoriteMutation,
+} from "../../hooks/use-favorites";
+import { useAuthStore } from "../../stores/auth-store";
+import type { MovieListItem } from "../../types/movie-list-item";
 import { toMovieListItems } from "../../utils/movies/movie-adapter";
 
 type CardSize = "small" | "large";
+
+interface MovieListState {
+  requestKey: string;
+  movies: MovieListItem[];
+  totalPages: number;
+  errorMessage: string | null;
+}
 
 export function MovieListPage() {
   const { page: searchPage } = useSearch({
     from: "/",
   });
 
-  const navigate = useNavigate({
-    from: "/",
-  });
-
+  const navigate = useNavigate({ from: "/" });
   const page = searchPage ?? 1;
 
-  // TanStack Query로 영화 목록 조회
-  const moviesQuery = useQuery(movieQueries.list(page));
+  const [retryCount, setRetryCount] = useState(0);
 
-  const isLoading = moviesQuery.isPending;
+  const [movieState, setMovieState] = useState<MovieListState>({
+    requestKey: "",
+    movies: [],
+    totalPages: 1,
+    errorMessage: null,
+  });
 
-  const movies = moviesQuery.data
-    ? toMovieListItems(moviesQuery.data.results)
-    : [];
+  // 로그인 상태 확인
+  const accessToken = useAuthStore((state) => state.accessToken);
 
-  const totalPages = moviesQuery.data?.total_pages ?? 1;
+  // 서버 즐겨찾기 조회 및 등록·삭제
+  const favoritesQuery = useFavoritesQuery(Boolean(accessToken));
 
-  const errorMessage = moviesQuery.isError
-    ? "영화 목록을 불러오지 못했어요."
-    : null;
+  const createFavoriteMutation = useCreateFavoriteMutation();
 
-  function handleRetry() {
-    void moviesQuery.refetch();
+  const deleteFavoriteMutation = useDeleteFavoriteMutation();
+
+  const bookmarkedMovieIds =
+    favoritesQuery.data?.result.map((favorite) => favorite.movieId) ?? [];
+
+  const isBookmarkPending =
+    createFavoriteMutation.isPending || deleteFavoriteMutation.isPending;
+
+  function handleToggleBookmark(movieId: number) {
+    if (!accessToken) {
+      void navigate({ to: "/login" });
+      return;
+    }
+
+    if (
+      favoritesQuery.isPending ||
+      favoritesQuery.isError ||
+      isBookmarkPending
+    ) {
+      if (favoritesQuery.isError) {
+        alert("즐겨찾기 목록을 불러오지 못했어요.");
+      }
+      return;
+    }
+
+    const isBookmarked = bookmarkedMovieIds.includes(movieId);
+
+    const mutation = isBookmarked
+      ? deleteFavoriteMutation
+      : createFavoriteMutation;
+
+    mutation.mutate(movieId, {
+      onError: () => {
+        alert("즐겨찾기 변경에 실패했어요.");
+      },
+    });
   }
 
-  // 북마크 상태 관리
-  const bookmarkedMovieIds = useBookmarkStore(
-    (state) => state.bookmarkedMovieIds,
-  );
-
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
-
-  // 카드 크기 상태 관리
   const [cardSize, setCardSize] = useState<CardSize>(() => {
     try {
       return localStorage.getItem("umcine-card-size") === "large"
@@ -58,14 +95,55 @@ export function MovieListPage() {
     }
   });
 
+  const requestKey = `${page}:${retryCount}`;
+
+  useEffect(() => {
+    let ignore = false;
+
+    getMovies({ page })
+      .then((response) => {
+        if (!ignore) {
+          setMovieState({
+            requestKey,
+            movies: toMovieListItems(response.results),
+            totalPages: response.total_pages,
+            errorMessage: null,
+          });
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMovieState({
+            requestKey,
+            movies: [],
+            totalPages: 1,
+            errorMessage: "영화 목록을 불러오지 못했어요.",
+          });
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [page, requestKey]);
+
+  const isCurrentRequest = movieState.requestKey === requestKey;
+
+  const isLoading = !isCurrentRequest;
+
+  const movies = isCurrentRequest ? movieState.movies : [];
+
+  const errorMessage = isCurrentRequest ? movieState.errorMessage : null;
+
+  const totalPages = isCurrentRequest ? movieState.totalPages : 1;
+
+  function handleRetry() {
+    setRetryCount((current) => current + 1);
+  }
+
   function handlePageChange(nextPage: number) {
-    navigate({
-      search:
-        nextPage === 1
-          ? {}
-          : {
-              page: nextPage,
-            },
+    void navigate({
+      search: nextPage === 1 ? {} : { page: nextPage },
     });
 
     window.scrollTo({
@@ -145,7 +223,7 @@ export function MovieListPage() {
           <MovieGrid
             movies={movies}
             bookmarkedMovieIds={bookmarkedMovieIds}
-            onToggleBookmark={toggleBookmark}
+            onToggleBookmark={handleToggleBookmark}
             cardSize={cardSize}
           />
         )}
