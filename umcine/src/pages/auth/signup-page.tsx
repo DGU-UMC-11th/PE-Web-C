@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { HTTPError } from "ky";
 import { useRef, useState, type FormEvent } from "react";
+
 import { checkEmailDuplicate } from "../../api/members/check-email-duplicate";
 import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
-import { signup } from "../../api/members/signup";
+import { useSignupMutation } from "../../hooks/use-signup-mutation";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z0-9!@#$%^&*]{8,}$/;
 
@@ -20,13 +22,13 @@ export function SignupPage() {
   const [emailStatus, setEmailStatus] = useState<CheckStatus>("idle");
   const [nicknameStatus, setNicknameStatus] = useState<CheckStatus>("idle");
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSignupSuccess, setIsSignupSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const emailVersion = useRef(0);
   const nicknameVersion = useRef(0);
-  const submittingRef = useRef(false);
+
+  const signupMutation = useSignupMutation();
 
   const isEmailValid = EMAIL_REGEX.test(email.trim());
 
@@ -48,7 +50,7 @@ export function SignupPage() {
     isFormValid &&
     emailStatus === "available" &&
     nicknameStatus === "available" &&
-    !isSubmitting &&
+    !signupMutation.isPending &&
     !isSignupSuccess;
 
   const handleEmailChange = (value: string) => {
@@ -69,7 +71,7 @@ export function SignupPage() {
     if (
       !isEmailValid ||
       emailStatus === "checking" ||
-      isSubmitting ||
+      signupMutation.isPending ||
       isSignupSuccess
     ) {
       return;
@@ -89,6 +91,7 @@ export function SignupPage() {
       setEmailStatus(response.available ? "available" : "duplicate");
     } catch {
       if (emailVersion.current !== version) return;
+
       setEmailStatus("error");
     }
   };
@@ -97,7 +100,7 @@ export function SignupPage() {
     if (
       !isNicknameValid ||
       nicknameStatus === "checking" ||
-      isSubmitting ||
+      signupMutation.isPending ||
       isSignupSuccess
     ) {
       return;
@@ -117,57 +120,59 @@ export function SignupPage() {
       setNicknameStatus(response.available ? "available" : "duplicate");
     } catch {
       if (nicknameVersion.current !== version) return;
+
       setNicknameStatus("error");
     }
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!canSubmit || submittingRef.current) return;
+    if (!canSubmit || signupMutation.isPending) return;
 
-    submittingRef.current = true;
-    setIsSubmitting(true);
     setSubmitError("");
 
-    try {
-      const response = await signup({
+    signupMutation.mutate(
+      {
         email: email.trim(),
         nickname: nickname.trim(),
         password,
-      });
+      },
+      {
+        onSuccess: (response) => {
+          if (!response.isSuccess) {
+            setSubmitError(response.message || "회원가입에 실패했습니다.");
+            return;
+          }
 
-      if (!response.isSuccess) {
-        setSubmitError(response.message || "회원가입에 실패했습니다.");
-        return;
-      }
+          setIsSignupSuccess(true);
+          setPassword("");
+          setPasswordConfirm("");
+        },
+        onError: (error) => {
+          if (error instanceof HTTPError) {
+            if (error.response.status === 409) {
+              setSubmitError(
+                "이미 사용 중인 이메일 또는 닉네임입니다. 중복 확인을 다시 해주세요.",
+              );
 
-      setIsSignupSuccess(true);
-      setPassword("");
-      setPasswordConfirm("");
-    } catch (error) {
-      if (error instanceof HTTPError) {
-        if (error.response.status === 409) {
-          setSubmitError(
-            "이미 사용 중인 이메일 또는 닉네임입니다. 중복 확인을 다시 해주세요.",
-          );
-
-          setEmailStatus("idle");
-          setNicknameStatus("idle");
-        } else if (error.response.status === 400) {
-          setSubmitError("입력 정보를 확인한 후 다시 시도해 주세요.");
-        } else {
-          setSubmitError("회원가입 요청에 실패했습니다. 다시 시도해 주세요.");
-        }
-      } else {
-        setSubmitError(
-          "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
-        );
-      }
-    } finally {
-      submittingRef.current = false;
-      setIsSubmitting(false);
-    }
+              setEmailStatus("idle");
+              setNicknameStatus("idle");
+            } else if (error.response.status === 400) {
+              setSubmitError("입력 정보를 확인한 후 다시 시도해 주세요.");
+            } else {
+              setSubmitError(
+                "회원가입 요청에 실패했습니다. 다시 시도해 주세요.",
+              );
+            }
+          } else {
+            setSubmitError(
+              "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+            );
+          }
+        },
+      },
+    );
   };
 
   const inputClassName =
@@ -176,7 +181,7 @@ export function SignupPage() {
   const checkButtonClassName =
     "shrink-0 rounded-lg bg-[#2563eb] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50";
 
-  const isInputDisabled = isSubmitting || isSignupSuccess;
+  const isInputDisabled = signupMutation.isPending || isSignupSuccess;
 
   return (
     <main className="min-h-[calc(100vh-91px)] bg-[#f8fafc] px-5 py-16">
@@ -413,6 +418,7 @@ export function SignupPage() {
               <p className="font-bold text-green-700">
                 회원가입이 완료되었습니다!
               </p>
+
               <Link
                 to="/login"
                 className="mt-2 inline-block text-sm font-bold text-[#2563eb]"
@@ -427,7 +433,7 @@ export function SignupPage() {
             disabled={!canSubmit}
             className="w-full rounded-lg bg-[#2563eb] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting
+            {signupMutation.isPending
               ? "가입 중..."
               : isSignupSuccess
                 ? "가입 완료"
