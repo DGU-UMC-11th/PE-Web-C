@@ -34,6 +34,22 @@ public class RatingController {
         );
     }
 
+
+    // JWT로 로그인한 회원의 평점 조회
+    @GetMapping("/ratings/me")
+    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getMyRatings(
+            @RequestAttribute(AuthInterceptor.MEMBER_ID) Long memberId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size
+    ) {
+        Page<RatingResponse> response =
+                ratingService.getRatingsByMember(memberId, page, size);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("내 평점 목록을 조회했습니다.", response)
+        );
+    }
+
     // JWT로 인증된 회원의 평점 등록
     @PostMapping("/ratings")
     public ResponseEntity<ApiResponse<RatingResponse>> createRating(
