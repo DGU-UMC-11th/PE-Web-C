@@ -1,11 +1,25 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState, type SubmitEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-import { movieQueries } from "../../api/movies/movie-queries";
+import { useEffect, useState, type SubmitEvent } from "react";
+
+import { searchMovies } from "../../api/movies/search-movies";
 import Pagination from "../../components/movies/pagination";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import {
+  useFavoritesQuery,
+  useCreateFavoriteMutation,
+  useDeleteFavoriteMutation,
+} from "../../hooks/use-favorites";
+import { useAuthStore } from "../../stores/auth-store";
+import type { MovieListItem } from "../../types/movie-list-item";
 import { toMovieListItems } from "../../utils/movies/movie-adapter";
+
+interface SearchResultState {
+  requestKey: string;
+  movies: MovieListItem[];
+  totalPages: number;
+  totalResults: number;
+  errorMessage: string | null;
+}
 
 export function SearchPage() {
   const { query, page: searchPage } = useSearch({
@@ -20,32 +34,114 @@ export function SearchPage() {
   const normalizedQuery = query?.trim() ?? "";
 
   const [searchText, setSearchText] = useState(query ?? "");
+  const [retryCount, setRetryCount] = useState(0);
 
-  // TanStack Query로 영화 검색 요청
-  const searchQuery = useQuery(movieQueries.search(normalizedQuery, page));
+  const [searchResult, setSearchResult] = useState<SearchResultState>({
+    requestKey: "",
+    movies: [],
+    totalPages: 1,
+    totalResults: 0,
+    errorMessage: null,
+  });
 
-  // 요청 상태 및 검색 결과
-  const isLoading = searchQuery.isLoading;
+  // 로그인 상태와 서버 즐겨찾기 데이터
+  const accessToken = useAuthStore((state) => state.accessToken);
 
-  const movies = searchQuery.data
-    ? toMovieListItems(searchQuery.data.results)
-    : [];
+  const favoritesQuery = useFavoritesQuery(Boolean(accessToken));
 
-  const totalPages = searchQuery.data?.total_pages ?? 1;
-  const totalResults = searchQuery.data?.total_results ?? 0;
+  const createFavoriteMutation = useCreateFavoriteMutation();
 
-  const errorMessage = searchQuery.isError
-    ? "검색 결과를 불러오지 못했어요."
-    : null;
+  const deleteFavoriteMutation = useDeleteFavoriteMutation();
 
-  // 북마크 상태
-  const bookmarkedMovieIds = useBookmarkStore(
-    (state) => state.bookmarkedMovieIds,
-  );
+  const bookmarkedMovieIds =
+    favoritesQuery.data?.result.map((favorite) => favorite.movieId) ?? [];
 
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+  const isBookmarkPending =
+    createFavoriteMutation.isPending || deleteFavoriteMutation.isPending;
 
-  // 검색 제출
+  function handleToggleBookmark(movieId: number) {
+    if (!accessToken) {
+      void navigate({ to: "/login" });
+      return;
+    }
+
+    if (
+      favoritesQuery.isPending ||
+      favoritesQuery.isError ||
+      isBookmarkPending
+    ) {
+      if (favoritesQuery.isError) {
+        alert("즐겨찾기 목록을 불러오지 못했어요.");
+      }
+      return;
+    }
+
+    const isBookmarked = bookmarkedMovieIds.includes(movieId);
+
+    const mutation = isBookmarked
+      ? deleteFavoriteMutation
+      : createFavoriteMutation;
+
+    mutation.mutate(movieId, {
+      onError: () => {
+        alert("즐겨찾기 변경에 실패했어요.");
+      },
+    });
+  }
+
+  const requestKey = `${normalizedQuery}:${page}:${retryCount}`;
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!normalizedQuery) {
+      return;
+    }
+
+    searchMovies({
+      query: normalizedQuery,
+      page,
+    })
+      .then((response) => {
+        if (!ignore) {
+          setSearchResult({
+            requestKey,
+            movies: toMovieListItems(response.results),
+            totalPages: response.total_pages,
+            totalResults: response.total_results,
+            errorMessage: null,
+          });
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setSearchResult({
+            requestKey,
+            movies: [],
+            totalPages: 1,
+            totalResults: 0,
+            errorMessage: "검색 결과를 불러오지 못했어요.",
+          });
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [normalizedQuery, page, requestKey]);
+
+  const isCurrentRequest = searchResult.requestKey === requestKey;
+
+  const isLoading = normalizedQuery !== "" && !isCurrentRequest;
+
+  const movies = isCurrentRequest ? searchResult.movies : [];
+
+  const errorMessage = isCurrentRequest ? searchResult.errorMessage : null;
+
+  const totalPages = isCurrentRequest ? searchResult.totalPages : 1;
+
+  const totalResults = isCurrentRequest ? searchResult.totalResults : 0;
+
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -61,17 +157,14 @@ export function SearchPage() {
     });
   }
 
-  // 검색어 지우기
   function handleClear() {
     setSearchText("");
   }
 
-  // 오류 발생 시 다시 요청
   function handleRetry() {
-    void searchQuery.refetch();
+    setRetryCount((current) => current + 1);
   }
 
-  // 검색 결과 페이지 변경
   function handlePageChange(nextPage: number) {
     if (!normalizedQuery) {
       return;
@@ -239,8 +332,11 @@ export function SearchPage() {
 
                             <button
                               type="button"
-                              onClick={() => toggleBookmark(movie.id)}
-                              className="cursor-pointer border-none bg-transparent p-0 text-[12px] font-extrabold text-[#2563eb]"
+                              onClick={() => handleToggleBookmark(movie.id)}
+                              disabled={
+                                Boolean(accessToken) && isBookmarkPending
+                              }
+                              className="cursor-pointer border-none bg-transparent p-0 text-[12px] font-extrabold text-[#2563eb] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isBookmarked ? "북마크 해제" : "북마크 추가"}
                             </button>

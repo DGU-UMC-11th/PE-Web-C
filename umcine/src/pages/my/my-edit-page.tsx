@@ -1,65 +1,61 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
-interface MyInfo {
-  email: string;
-  nickname: string;
-}
-
-const defaultInfo: MyInfo = {
-  email: "weektest@example.com",
-  nickname: "week7tester",
-};
-
-function getInitialInfo(): MyInfo {
-  const savedInfo = localStorage.getItem("umcine-my-info");
-
-  if (!savedInfo) return defaultInfo;
-
-  try {
-    const parsedInfo = JSON.parse(savedInfo) as MyInfo;
-
-    if (
-      typeof parsedInfo.email === "string" &&
-      typeof parsedInfo.nickname === "string"
-    ) {
-      return parsedInfo;
-    }
-  } catch {
-    return defaultInfo;
-  }
-
-  return defaultInfo;
-}
+import { getMe } from "../../api/members/me";
+import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
+import { useAuthStore } from "../../stores/auth-store";
 
 export function MyEditPage() {
   const navigate = useNavigate();
 
-  const [initialInfo] = useState(getInitialInfo);
-  const [email, setEmail] = useState(initialInfo.email);
-  const [nickname, setNickname] = useState(initialInfo.nickname);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const updateMeMutation = useUpdateMeMutation();
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const [nickname, setNickname] = useState("");
+
+  useEffect(() => {
+    if (meQuery.data) {
+      setNickname(meQuery.data.nickname);
+    }
+  }, [meQuery.data]);
+
+  const nicknameValue = nickname.trim();
 
   const isNicknameValid =
-    nickname.trim().length >= 2 && nickname.trim().length <= 12;
+    nicknameValue.length >= 2 && nicknameValue.length <= 12;
 
-  const canSave = isEmailValid && isNicknameValid;
+  const canSave =
+    isNicknameValid &&
+    !updateMeMutation.isPending &&
+    !meQuery.isLoading &&
+    Boolean(meQuery.data);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!canSave) return;
 
-    const updatedInfo: MyInfo = {
-      email: email.trim(),
-      nickname: nickname.trim(),
-    };
-
-    localStorage.setItem("umcine-my-info", JSON.stringify(updatedInfo));
-
-    navigate({ to: "/my" });
+    updateMeMutation.mutate(
+      { nickname: nicknameValue },
+      {
+        onSuccess: () => {
+          navigate({ to: "/my" });
+        },
+      },
+    );
   };
+
+  const inputClassName =
+    "w-full rounded-lg border border-[#d5dae2] px-4 py-3 text-sm outline-none focus:border-[#2563eb] disabled:bg-[#f8fafc]";
 
   return (
     <main className="min-h-[calc(100vh-91px)] bg-[#f8fafc] px-5 py-16">
@@ -84,16 +80,14 @@ export function MyEditPage() {
             <input
               id="email"
               type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-[#d5dae2] px-4 py-3 text-sm outline-none focus:border-[#2563eb]"
+              value={meQuery.data?.email ?? ""}
+              readOnly
+              className={`${inputClassName} bg-[#f8fafc]`}
             />
 
-            {email.length > 0 && !isEmailValid && (
-              <p className="mt-2 text-xs text-red-500">
-                올바른 이메일 형식으로 입력해 주세요.
-              </p>
-            )}
+            <p className="mt-2 text-xs text-[#606774]">
+              이메일은 변경할 수 없습니다.
+            </p>
           </div>
 
           <div>
@@ -109,7 +103,8 @@ export function MyEditPage() {
               type="text"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              className="w-full rounded-lg border border-[#d5dae2] px-4 py-3 text-sm outline-none focus:border-[#2563eb]"
+              disabled={!meQuery.data || updateMeMutation.isPending}
+              className={inputClassName}
             />
 
             {nickname.length > 0 && !isNicknameValid && (
@@ -119,12 +114,24 @@ export function MyEditPage() {
             )}
           </div>
 
+          {meQuery.isLoading && (
+            <p className="text-sm text-[#606774]">
+              회원 정보를 불러오는 중입니다.
+            </p>
+          )}
+
+          {meQuery.isError && (
+            <p role="alert" className="text-sm text-red-500">
+              회원 정보를 불러오지 못했습니다.
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={!canSave}
             className="w-full rounded-lg bg-[#2563eb] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            저장하기
+            {updateMeMutation.isPending ? "저장 중" : "저장하기"}
           </button>
 
           <Link
